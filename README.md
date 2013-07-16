@@ -16,4 +16,10 @@
 		* 快速梯度下降模板函数
 		* Logistic 回归
 		
-		
+
+* 目录说明
+    * bv 源代码文件
+    * third\_party 第三方集成目录
+    * examples 测试样例
+
+
