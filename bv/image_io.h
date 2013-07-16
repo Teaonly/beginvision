@@ -58,58 +58,106 @@ struct bitmap_info_header {
     uint32_t      biClrImportant;
 };
 
-Image* CreateImageFromBMP(const std::string& fileName) {
-        bitmap_file_header bmfh;
-        bitmap_info_header bmih;
-        std::vector<unsigned char> data; 
-        
-        // parse BMP file
-        {
-            std::ifstream in(fileName.c_str(),std::ios::binary);
-            if (!in || !bmfh.read(in)) {
-                return NULL;
-            }
-
-            in.read((char*)&bmih, sizeof(bitmap_info_header));
-            if (!in || bmih.biWidth <= 0 || bmih.biHeight <= 0 || bmih.biCompression != 0)
-                return NULL;
-            if ( bmih.biBitCount != 24 || bmih.biSize != sizeof(bitmap_info_header) )
-                return NULL;
-            
-            unsigned int padding = (4-((bmih.biWidth*3) & 3)) &3;
-            if ( (bmih.biWidth+padding) * bmih.biHeight >= bmih.biSizeImage )
-                return NULL;
-
-            data.resize(bmih.biSizeImage);
-            in.read((char*)&*data.begin(), data.size());
+ColorImage<3>* CreateImageFromBMP(const std::string& fileName) {
+    bitmap_file_header bmfh;
+    bitmap_info_header bmih;
+    std::vector<unsigned char> data; 
+    
+    // parse BMP file
+    {
+        std::ifstream in(fileName.c_str(),std::ios::binary);
+        if (!in || !bmfh.read(in)) {
+            return NULL;
         }
-        
-        int width = bmih.biWidth;
-        int height = bmih.biHeight; 
 
-        Image* img = new Image(width, height); 
+        in.read((char*)&bmih, sizeof(bitmap_info_header));
+        if (!in || bmih.biWidth <= 0 || bmih.biHeight <= 0 || bmih.biCompression != 0)
+            return NULL;
+        if ( bmih.biBitCount != 24 || bmih.biSize != sizeof(bitmap_info_header) )
+            return NULL;
         
-        unsigned int padding = (4-((bmih.biWidth*3) & 3)) &3; 
-        int bmp_index = 0;
-        for(int l = height-1; l >= 0; l -- ) { 
-            for (int x = 0; x < width; x++) {
-                unsigned r,g,b;
-                b = data[bmp_index];
-                bmp_index++;
-                g = data[bmp_index];
-                bmp_index++;
-                r = data[bmp_index];
-                bmp_index++;
-                
-                img->color(0)(x, l) = r;
-                img->color(0)(x, l) = g;
-                img->color(0)(x, l) = b;
-            }
-            bmp_index += padding;
-        }           
+        unsigned int padding = (4-((bmih.biWidth*3) & 3)) &3;
+        if ( (bmih.biWidth+padding) * bmih.biHeight >= bmih.biSizeImage )
+            return NULL;
 
-        return img;
+        data.resize(bmih.biSizeImage);
+        in.read((char*)&*data.begin(), data.size());
     }
+    
+    int width = bmih.biWidth;
+    int height = bmih.biHeight; 
+
+    ColorImage<3>* img = new ColorImage<3>(width, height); 
+    
+    unsigned int padding = (4-((bmih.biWidth*3) & 3)) &3; 
+    int bmp_index = 0;
+    for(int l = height-1; l >= 0; l -- ) { 
+        for (int x = 0; x < width; x++) {
+            unsigned r,g,b;
+            b = data[bmp_index];
+            bmp_index++;
+            g = data[bmp_index];
+            bmp_index++;
+            r = data[bmp_index];
+            bmp_index++;
+            
+            img->color(0).data(x, l) = r;
+            img->color(1).data(x, l) = g;
+            img->color(2).data(x, l) = b;
+        }
+        bmp_index += padding;
+    }
+
+    return img;
+}
+
+bool SaveImageToBMP(ColorImage<3>* img, const std::string& fileName) {
+    bitmap_file_header bmfh;
+    bitmap_info_header bmih;
+    std::vector<unsigned char> data; 
+
+    int width = img->color(0).width();
+    int height = img->color(0).height();
+
+    // config the info header
+    std::fill((char*)&bmih,(char*)&bmih+sizeof(bmih),0);
+    bmih.biBitCount = 24;
+    bmih.biPlanes = 1;
+    bmih.biCompression = 0;;
+    bmih.biWidth = width;
+    bmih.biHeight = height;
+    unsigned int padding = (4-((bmih.biWidth*3) & 3)) &3;
+    bmih.biSizeImage = (width + padding) * height * 3;
+    bmih.biSize = sizeof(bitmap_info_header);
+    data.resize(bmih.biSizeImage);
+    int bmp_index = 0;
+    for(int l = height - 1; l >= 0; l -- ) {
+        for (int x = 0; x < width; x++) {
+            unsigned r,g,b;
+           
+            r = img->color(0).data(x,l);
+            g = img->color(1).data(x,l);
+            b = img->color(2).data(x,l);
+            
+            data[bmp_index] = b;
+            bmp_index++;
+            data[bmp_index] = g;
+            bmp_index++;
+            data[bmp_index] = r;
+            bmp_index++;
+        }
+        bmp_index += padding;
+    } 
+   
+    // write to file 
+    std::ofstream out(fileName.c_str(),std::ios::binary);
+    if (!bmfh.write(out))
+        return false;
+    out.write((const char*)&bmih,sizeof(bitmap_info_header));
+    out.write((const char*)&*data.begin(),data.size());
+
+    return true;
+}
 
 }   //end of namespace
 

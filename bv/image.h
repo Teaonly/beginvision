@@ -7,31 +7,50 @@ namespace bv {
 
 class Image {
 public:
-    Image(int width, int height) {
-        for(int i = 0; i < 3; i++) {
-            color_[i] = new Eigen::MatrixXi(width, height);
-        }
+    Image(int width, int height) : data(width, height) {
     }
-    Image(int w1, int h1, int w2, int h2, int w3, int h3) {
-        color_[0] = new Eigen::MatrixXi(w1,h1);
-        color_[1] = new Eigen::MatrixXi(w2,h2);
-        color_[2] = new Eigen::MatrixXi(w3,h3);
+    ~Image() {
+    
+    }
+    int width() const {
+        return data.rows();
+    }
+    int height() const {
+        return data.cols();
     }
     
-    ~Image() {
-        for(int i = 0; i < 3; i++) {
+    Eigen::MatrixXi data; 
+};
+
+template<int ColorNumber>
+class ColorImage {
+public:
+    ColorImage(int width, int height) {
+        for(int i = 0; i < ColorNumber; i++) {
+            color_[i] = new Image(width, height);
+        }
+    }
+    ColorImage(const int w[], const int h[]) {
+        for (int i = 0; i < ColorNumber; i++)    {
+            color_[i] = new Image(w, h);
+        }
+    }
+    
+
+    ~ColorImage() {
+        for(int i = 0; i < ColorNumber; i++) {
             if ( color_[i] != NULL) {
                 delete color_[i];
             }    
         }
     }
-
-    Eigen::MatrixXi& color(int i) {
-        return *(color_[i]);
+    
+    Image& color(int c) {
+        return *(color_[c]);
     }
 
 private:
-    Eigen::MatrixXi* color_[3];
+    Image* color_[ColorNumber];
 };
 
 }
