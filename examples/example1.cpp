@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include <bv/image.h>
-#include <bv/image_io.h>
 
 int main(int argc, char *argv[]) {
     if ( argc < 2) {
@@ -9,16 +8,12 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    bv::ColorImage<3>* img = bv::CreateImageFromBMP( argv[1] );
+    bv::ColorImage<3> img( argv[1] );
 
-    std::cout << "Width = " << img->color(0).width() << std::endl;
-    std::cout << "Height = " << img->color(0).data.cols() << std::endl;
+    std::cout << "Width = " << img.color(0).width() << std::endl;
+    std::cout << "Height = " << img.color(0).data.cols() << std::endl;
     
-    img->color(1).data *= 2;
+    img.color(1).data *= 2;
 
-    bv::SaveImageToBMP( img, "/tmp/xx.bmp");
-
-    delete img;
-
-    std::cout << "Destory image is also OK" << std::endl; 
+    img.SaveImageToBMP("/tmp/xx.bmp");
 }

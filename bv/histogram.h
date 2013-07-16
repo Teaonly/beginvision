@@ -18,7 +18,6 @@ public:
                 hist_[charValue] = hist_[charValue] + 1;
             }
         }
-
     }
     
     float& value(unsigned char v) {
