@@ -87,7 +87,12 @@ public:
 	/// @param[in] int maxLineSearches Maximum number of line-searches per iteration allowed.
 	/// @param[in] maxHistory Maximum history length of previous solutions and gradients.
 	MF_LBFGS(const IFunction * function = 0, double epsilon = 1e-6, int maxIterations = 400,
-		  int maxLineSearches = 20, int maxHistory = 10) {
+		  int maxLineSearches = 20, int maxHistory = 10) 
+            : function_(function), 
+              epsilon_(epsilon),
+              maxIterations_(maxIterations), 
+              maxLineSearches_(maxLineSearches), 
+              maxHistory_(maxHistory) {
 
 		assert(!function || (function->dim() > 0));
 		assert(epsilon > 0.0);
