@@ -34,5 +34,12 @@
             'example4.cpp',
         ],
     },
+    {
+        'target_name': 'ex5',
+        'type': 'executable',
+        'sources': [
+            'example5.cpp',
+        ],
+    },
     ],
 }

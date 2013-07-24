@@ -7,7 +7,7 @@ namespace bv {
 
 class Convert {
 public:
-    static void colorImageToGrayImage(ColorImage<3>& in, Image& out) {
+    static int colorImageToGrayImage(ColorImage<3>& in, Image& out) {
         for(int y = 0; y < in.height(); y++) {
             for ( int x = 0; x < in.width(); x++) {
                 unsigned char r,g,b;
@@ -20,14 +20,46 @@ public:
                 out.data(x,y) = gray;
             }
         }
+
+        return BV_OK;
     }
     
-    static void grayImageToColorImage(Image& in, ColorImage<3>& out) {
+    static int grayImageToColorImage(Image& in, ColorImage<3>& out) {
         for ( int i = 0; i < 3; i++) {
             out.color(i).data = in.data;
         }
+        return BV_OK;
     }
 
+    static int matrixToGrayImage(Eigen::MatrixXd& in, Image& out) {
+        // check size
+        if ( in.rows() != out.width() || in.cols() != out.height() ) {
+            return BV_ERROR_PARAMETER;                
+        } 
+ 
+        for(int y=0; y < out.height(); y++) {
+            for ( int x = 0; x < out.width(); x++) {
+                out.data(x,y) = in(x,y) * 255;
+            }
+        }
+        return BV_OK;
+    }
+
+    static int grayImageToMatrix(Image& in, Eigen::MatrixXd& out) {
+        // check size
+        if ( out.rows() != in.width() || out.cols() != in.height() ) {
+            return BV_ERROR_PARAMETER;                
+        } 
+        
+        for(int y=0; y < in.height(); y++) {
+            for ( int x = 0; x < in.width(); x++) {
+                out(x,y) = in.data(x,y) / 255.0;
+            }
+        }
+        return BV_OK;
+    }
+
+private:
     template<typename T>
     static void rgbToGray(unsigned char r, unsigned char g, unsigned char b, T& output) {
         unsigned int y;

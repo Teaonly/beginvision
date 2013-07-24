@@ -15,7 +15,7 @@ public:
         EXTENTION_SKIP = 3,
     };
 
-    static int average(Eigen::MatrixXd& in, Eigen::EigenMatrixXd& out, int size, EXTENTION_MODE mode = EXTENTION_REPEAT) { 
+    static int average(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, EXTENTION_MODE mode = EXTENTION_REPEAT) { 
         // Change size to a odd value
         if ( size%2 == 0 ) {
             return BV_ERROR_PARAMETER;
@@ -31,15 +31,13 @@ public:
         int rows = in.rows();
 
         
-        Eigen::EigenMatrixXd source(rows + hf_size*2, cols + hf_size*2);
+        Eigen::MatrixXd source(rows + hf_size*2 , cols + hf_size*2 );
 
         if ( mode == EXTENTION_REPEAT ) {
-            for (int c = 1; c <= cols + hf_size*2; c++) {
+            for (int c = 0; c < cols + hf_size*2; c++) {
                 int c_source = ( c + 2*cols - hf_size ) % cols;
-                if ( c_source == 0) c_source = cols;
-                for(int r = 1: r <= rows + hf_size*2; r++) {
+                for(int r = 0; r < rows + hf_size*2; r++) {
                     int r_source = ( r + 2*rows - hf_size ) % rows;
-                    if ( r_source == 0) r_source = rows;
                     source(r, c) = in(r_source, c_source);
                 }
             } 
@@ -47,12 +45,12 @@ public:
             return BV_ERROR_PARAMETER;
         }
         
-        for (int c = 1; c <= cols; c++) {
-            for(int r = 1: r <= rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            for(int r = 0; r < rows; r++) {
                 double sum  = 0.0;
                 for ( int cs = c - hf_size; cs <= c + hf_size; cs++) {
-                    for ( int rs = r - hf_size; rs <= r + hf_size; cr++) {
-                        sum += source(rs + hf_size; cs + hf_size); 
+                    for ( int rs = r - hf_size; rs <= r + hf_size; rs++) {
+                        sum += source(rs + hf_size, cs + hf_size); 
                     }
                 }
                 sum /= (size*size);
@@ -62,9 +60,9 @@ public:
         return BV_OK;
     }
 
-    static int withTemplate(Eigen::MatrixXd& in, Eigen::EigenMatrixXd& out, 
-                       Eigne::MatrixXd& t, EXTENTION_MODE mode = EXTENTION_REPEAT) { 
-        if ( t.rows()%2 == 0 || t.cols()%2 == 0)
+    static int withTemplate(Eigen::MatrixXd& in, Eigen::MatrixXd& out, 
+                       Eigen::MatrixXd& t, EXTENTION_MODE mode = EXTENTION_REPEAT) { 
+        if ( t.rows()%2 == 0 || t.cols()%2 == 0 ) {
             return BV_ERROR_PARAMETER;
         }
         int hf_rows = t.rows() >> 1;
@@ -78,15 +76,13 @@ public:
         int cols = in.cols();
         int rows = in.rows();
 
-        Eigen::EigenMatrixXd source(rows + hf_rows*2, cols + hf_cols*2);
+        Eigen::MatrixXd source(rows + hf_rows*2, cols + hf_cols*2);
 
         if ( mode == EXTENTION_REPEAT ) {
-            for (int c = 1; c <= cols + hf_cols*2; c++) {
+            for (int c = 0; c <= cols + hf_cols*2; c++) {
                 int c_source = ( c + 2*cols - hf_cols ) % cols;
-                if ( c_source == 0) c_source = cols;
-                for(int r = 1: r <= rows + hf_rows*2; r++) {
+                for(int r = 0; r < rows + hf_rows*2; r++) {
                     int r_source = ( r + 2*rows - hf_rows ) % rows;
-                    if ( r_source == 0) r_source = rows;
                     source(r, c) = in(r_source, c_source);
                 }
             } 
@@ -96,13 +92,13 @@ public:
         
         double tsum = t.cols() * t.rows();
 
-        for (int c = 1; c <= cols; c++) {
-            for(int r = 1: r <= rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            for(int r = 0; r < rows; r++) {
                 double sum  = 0.0;
                 for ( int cs = c - hf_cols; cs <= c + hf_cols; cs++) {
-                    for ( int rs = r - hf_rows; rs <= r + hf_rows; cr++) {
-                        int ct = cs - c + hf_cols + 1;
-                        int rt = rs - r + hf_rows + 1;
+                    for ( int rs = r - hf_rows; rs <= r + hf_rows; rs++) {
+                        int ct = cs - c + hf_cols;
+                        int rt = rs - r + hf_rows;
                         sum += source( cs + hf_cols, rs + hf_rows) * t(ct, rt);
                     }
                 }
