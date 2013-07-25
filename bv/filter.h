@@ -79,7 +79,7 @@ public:
         Eigen::MatrixXd source(rows + hf_rows*2, cols + hf_cols*2);
 
         if ( mode == EXTENTION_REPEAT ) {
-            for (int c = 0; c <= cols + hf_cols*2; c++) {
+            for (int c = 0; c < cols + hf_cols*2; c++) {
                 int c_source = ( c + 2*cols - hf_cols ) % cols;
                 for(int r = 0; r < rows + hf_rows*2; r++) {
                     int r_source = ( r + 2*rows - hf_rows ) % rows;
@@ -109,9 +109,6 @@ public:
 
         return BV_OK;
     }
-
-
-
 
 };    
 
