@@ -1,7 +1,9 @@
 #ifndef _BV_FILTER_H_
 #define _BV_FILTER_H_
 
+#include <math.h>
 #include <assert.h>
+#include <vector>
 #include <Eigen/Core>
 #include "beginvision.h"
 
@@ -15,24 +17,94 @@ public:
         EXTENTION_SKIP = 3,
     };
 
+    static int gaussianBlur(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, double sigma, EXTENTION_MODE mode = EXTENTION_REPEAT) {
+        if ( size%2 == 0) {
+            return BV_ERROR_PARAMETER;
+        }
+        
+        int hf_size = size >> 1;
+        // Check the input and out size  
+        if ( (in.rows () != out.rows()) || (in.cols() != out.cols()) ) {
+            return BV_ERROR_PARAMETER;
+        }
+
+        // Create 1D filter
+        std::vector<double> gaussian1D;
+        for(int i = -1*hf_size; i <= hf_size; i++) {
+            double v = exp(-1*i*i/(2*sigma*sigma));
+            gaussian1D.push_back(v);
+        } 
+        
+        // Compute the template sum 
+        double tplSum = 0;
+        for(int i = 0; i < size; i++) {
+            for(int j = 0; j < size; j++) {
+                tplSum = tplSum + gaussian1D[i]*gaussian1D[j]; 
+            }
+        }
+        
+        int cols = in.cols();
+        int rows = in.rows();
+
+        // extent input matrix
+        Eigen::MatrixXd source(rows + hf_size*2 , cols + hf_size*2 );
+        if ( mode == EXTENTION_REPEAT ) {
+            for (int c = 0; c < cols + hf_size*2; c++) {
+                int c_source = ( c + 2*cols - hf_size ) % cols;
+                for(int r = 0; r < rows + hf_size*2; r++) {
+                    int r_source = ( r + 2*rows - hf_size ) % rows;
+                    source(r, c) = in(r_source, c_source);
+                }
+            } 
+        } else {
+            return BV_ERROR_PARAMETER;
+        }
+        
+        // blur the input matrix 
+        for (int c = 0; c < cols; c++) {
+            for(int r = 0; r < rows; r++) {
+                double sum  = 0.0;
+                for ( int rs = r - hf_size; rs <= r + hf_size; rs++) {
+                    sum = sum + source(rs + hf_size, c + hf_size) * gaussian1D[rs - r + hf_size];
+                }
+                out(r, c) = sum;
+            }
+            for(int r = 0; r < rows + hf_size*2; r++) {
+                int r_source = ( r + 2*rows - hf_size ) % rows;
+                int c_source = ( c + 2*cols - hf_size ) % cols;
+                source(r, c) = out(r_source, c_source);
+            }
+        }
+        
+        for(int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                double sum  = 0.0;
+                for ( int cs = c - hf_size; cs <= c + hf_size; cs++) {
+                    sum = sum + source(r + hf_size, cs + hf_size) * gaussian1D[cs - c + hf_size];
+                }
+                out(r, c) = sum / tplSum;
+            }
+        }
+
+        return BV_OK;
+    }
+
     static int average(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, EXTENTION_MODE mode = EXTENTION_REPEAT) { 
         // Change size to a odd value
         if ( size%2 == 0 ) {
             return BV_ERROR_PARAMETER;
         }
-        int hf_size = size >> 1; 
         
         // Check the input and out size  
         if ( (in.rows () != out.rows()) || (in.cols() != out.cols()) ) {
             return BV_ERROR_PARAMETER;
         }
         
+        int hf_size = size >> 1; 
         int cols = in.cols();
         int rows = in.rows();
 
-        
         Eigen::MatrixXd source(rows + hf_size*2 , cols + hf_size*2 );
-
         if ( mode == EXTENTION_REPEAT ) {
             for (int c = 0; c < cols + hf_size*2; c++) {
                 int c_source = ( c + 2*cols - hf_size ) % cols;

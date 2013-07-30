@@ -17,11 +17,9 @@ int main(int argc, char *argv[]) {
 
     bv::Convert::colorImageToGrayImage(colorImage, img);
     ret = bv::Convert::grayImageToMatrix( img, gray);   
-    std::cout << "Ret = " << ret << std::endl;
-    ret = bv::Filter::average(gray, gray, 5);
-    std::cout << "Ret = " << ret << std::endl;
+    //ret = bv::Filter::average(gray, gray, 5);
+    ret = bv::Filter::gaussianBlur(gray, gray, 7, 2.0);
     ret = bv::Convert::matrixToGrayImage(gray, img);    
-    std::cout << "Ret = " << ret << std::endl;
     
     bv::Convert::grayImageToColorImage(img, colorImage);
     colorImage.SaveImageToBMP("/tmp/xx.bmp");
