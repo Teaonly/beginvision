@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     bv::Convert::colorImageToGrayImage(colorImage, img);
     ret = bv::Convert::grayImageToMatrix( img, gray);   
     //ret = bv::Filter::average(gray, gray, 5);
-    ret = bv::Filter::gaussianBlur(gray, gray, 7, 2.0);
+    ret = bv::Filter::gaussianBlur(gray, gray, 9, 3.0);
     ret = bv::Convert::matrixToGrayImage(gray, img);    
     
     bv::Convert::grayImageToColorImage(img, colorImage);

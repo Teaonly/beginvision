@@ -45,42 +45,37 @@ public:
         
         int cols = in.cols();
         int rows = in.rows();
-
-        // extent input matrix
-        Eigen::MatrixXd source(rows + hf_size*2 , cols + hf_size*2 );
+        
+        int ext_size = hf_size*2;
+        Eigen::MatrixXd source(rows + ext_size*2 , cols + ext_size*2 );
+        Eigen::MatrixXd source2(rows + ext_size*2 , cols + ext_size*2 );
         if ( mode == EXTENTION_REPEAT ) {
-            for (int c = 0; c < cols + hf_size*2; c++) {
-                int c_source = ( c + 2*cols - hf_size ) % cols;
-                for(int r = 0; r < rows + hf_size*2; r++) {
-                    int r_source = ( r + 2*rows - hf_size ) % rows;
+            for (int c = 0; c < cols + ext_size*2; c++) {
+                int c_source = ( c + 2*cols - ext_size ) % cols;
+                for(int r = 0; r < rows + ext_size*2; r++) {
+                    int r_source = ( r + 2*rows - ext_size ) % rows;
                     source(r, c) = in(r_source, c_source);
                 }
             } 
         } else {
             return BV_ERROR_PARAMETER;
         }
-        
-        // blur the input matrix 
-        for (int c = 0; c < cols; c++) {
-            for(int r = 0; r < rows; r++) {
-                double sum  = 0.0;
-                for ( int rs = r - hf_size; rs <= r + hf_size; rs++) {
-                    sum = sum + source(rs + hf_size, c + hf_size) * gaussian1D[rs - r + hf_size];
+
+        for (int c = -1 * hf_size; c < cols + hf_size; c++) {
+            for ( int r = -1*hf_size; r < rows + hf_size; r++) {
+                double sum = 0;
+                for ( int ri = -1 * hf_size; ri <= hf_size; ri++) {
+                    sum = sum + gaussian1D[ri + hf_size] * source(r + ri + ext_size, c + ext_size);
                 }
-                out(r, c) = sum;
-            }
-            for(int r = 0; r < rows + hf_size*2; r++) {
-                int r_source = ( r + 2*rows - hf_size ) % rows;
-                int c_source = ( c + 2*cols - hf_size ) % cols;
-                source(r, c) = out(r_source, c_source);
+                source2(r + ext_size, c + ext_size) = sum;
             }
         }
         
         for(int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 double sum  = 0.0;
-                for ( int cs = c - hf_size; cs <= c + hf_size; cs++) {
-                    sum = sum + source(r + hf_size, cs + hf_size) * gaussian1D[cs - c + hf_size];
+                for ( int ci = -1 * hf_size; ci <= hf_size; ci++) {
+                    sum = sum + gaussian1D[ci + hf_size] * source2(r + ext_size, c + ci + ext_size);
                 }
                 out(r, c) = sum / tplSum;
             }
