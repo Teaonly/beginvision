@@ -7,6 +7,13 @@ namespace bv {
 
 class Convert {
 public:
+    enum INTERPOLATE_MODE {
+        INTERPOLATE_NEAREST = 0,
+        INTERPOLATE_BILINEAR = 1,
+        INTERPOLATE_BICUBIC = 2,
+    };
+
+public:
     static int colorImageToGrayImage(ColorImage<3>& in, Image& out) {
         for(int y = 0; y < in.height(); y++) {
             for ( int x = 0; x < in.width(); x++) {
@@ -39,7 +46,7 @@ public:
  
         for(int y=0; y < out.height(); y++) {
             for ( int x = 0; x < out.width(); x++) {
-                out.data(x,y) = in(x,y) * 255;
+                out.data(x,y) = in(x,y) * out.scale;
             }
         }
         return BV_OK;
@@ -53,9 +60,24 @@ public:
         
         for(int y=0; y < in.height(); y++) {
             for ( int x = 0; x < in.width(); x++) {
-                out(x,y) = in.data(x,y) / 255.0;
+                out(x,y) = in.data(x,y) / in.scale * 1.0;
             }
         }
+        return BV_OK;
+    }
+
+    static int interpolate(Eigen::MatrixXd& in, Eigen::MatrixXd& out, INTERPOLATE_MODE mode=INTERPOLATE_BILINEAR) {
+        if ( mode != INTERPOLATE_BILINEAR) {
+            return BV_ERROR_PARAMETER;
+        }
+        
+        for (int y = 0; y < out.rows(); y++) {
+            for ( int x = 0; x < in.cols(); x++) {
+                          
+            }
+        } 
+
+        // TODO 
         return BV_OK;
     }
 

@@ -13,7 +13,8 @@ namespace bv {
 
 class Image {
 public:
-    Image(int width, int height) : data(width, height) {
+    Image(int width, int height, int maxValue = 255) : data(width, height), scale(maxValue) {
+        
     }
     ~Image() {
     }
@@ -24,19 +25,20 @@ public:
         return data.cols();
     }
 
-    Eigen::MatrixXi data; 
+    Eigen::MatrixXi data;
+    const int scale; 
 };
 
 template<int ColorNumber>
 class ColorImage {
 public:
-    ColorImage(int width, int height) {
+    ColorImage(int width, int height, int scale=255) {
         if ( ColorNumber <= 0) {
             assert(false);
         }
 
         for(int i = 0; i < ColorNumber; i++) {
-            color_[i] = new Image(width, height);
+            color_[i] = new Image(width, height, scale);
         }
     }
     ColorImage(const std::string& fileName) {

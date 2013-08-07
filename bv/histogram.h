@@ -10,50 +10,55 @@ class Histogram {
 public:    
     Histogram(Image& img) {
         float tv = 0.0;
-        hist_.resize(255, tv);
+        hist_.resize(img.scale + 1, tv);
 
         for(int y = 0; y < img.width(); y++) {
             for (int x = 0; x < img.height(); x++) {
-                unsigned char charValue = img.data(y,x) % 256;
+                unsigned char charValue = img.data(y,x) % (img.scale+1);
                 hist_[charValue] = hist_[charValue] + 1;
             }
         }
     }
-    
-    float& value(unsigned char v) {
+   
+    unsigned int size() {
+        return hist_.size();
+    } 
+
+    float& value(unsigned int v) {
         return hist_[v];
     }
 
-    float value(unsigned char v) const {
+    float value(unsigned int v) const {
         return hist_[v];
     }
     
     // if float is float 
     void normalization() {
         float s = sum();
-        for(int i = 0; i < 255; i++) {
+        for(int i = 0; i < hist_.size(); i++) {
             hist_[i] = hist_[i] / s;
         }
     }
 
     float sum() {
         float s = 0;
-        for(int i = 0; i < 255; i++) {
+        for(int i = 0; i < hist_.size(); i++) {
             s = s + hist_[i];
         }
         return s;
     }
 
-    void equaliseMatrix(Image& img) {
+    void equaliseImage(Image& img) {
         float sumh = 0.0;
-        unsigned char table[256];
-        for(int i = 0; i <= 255; i++) {
+        unsigned int table[img.scale+1];
+
+        for(int i = 0; i <= img.scale; i++) {
             if ( hist_[i] < 1) {    // is normalized
                 sumh = sumh + hist_[i] * (img.width()*img.height());       
             } else {
                 sumh = sumh + hist_[i];
             }
-            table[i] = (unsigned char)( 255.0/(img.width()*img.height()) * sumh + 0.0001 );
+            table[i] = (unsigned int)( img.scale /(img.width()*img.height()) * sumh + 0.0001 );
         }
 
         for(int y = 0; y < img.height(); y++) {
@@ -80,7 +85,7 @@ public:
         w2 = 1 - w1;
         u1 = 0;
         u2 = e;
-        for(int i = 1; i < 256; i++) {
+        for(int i = 1; i < hist_.size(); i++) {
             // w1/w2 left/right sum
             w1 = w1 + hist_[i];
             w2 = 1 - w1;

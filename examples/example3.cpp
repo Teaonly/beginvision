@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     
     bv::Convert::colorImageToGrayImage(colorImage, img);
     bv::Histogram hist(img);
-    hist.equaliseMatrix(img);
+    hist.equaliseImage(img);
 
     bv::Convert::grayImageToColorImage(img, colorImage);
     colorImage.SaveImageToBMP("/tmp/xx.bmp");
