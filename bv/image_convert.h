@@ -2,6 +2,7 @@
 #define _BV_IMAGE_CONVERT_H_
 
 #include "image.h"
+#include "beginvision.h"
 
 namespace bv {
 
@@ -60,24 +61,49 @@ public:
         
         for(int y=0; y < in.height(); y++) {
             for ( int x = 0; x < in.width(); x++) {
-                out(x,y) = in.data(x,y) / in.scale * 1.0;
+                out(x,y) = 1.0 * in.data(x,y) / in.scale;
             }
         }
         return BV_OK;
     }
 
-    static int interpolate(Eigen::MatrixXd& in, Eigen::MatrixXd& out, INTERPOLATE_MODE mode=INTERPOLATE_BILINEAR) {
+    static int resizeImage(Eigen::MatrixXd& in, Eigen::MatrixXd& out, INTERPOLATE_MODE mode=INTERPOLATE_BILINEAR) {
         if ( mode != INTERPOLATE_BILINEAR) {
             return BV_ERROR_PARAMETER;
         }
         
-        for (int y = 0; y < out.rows(); y++) {
-            for ( int x = 0; x < in.cols(); x++) {
-                          
+        double scaleX = 1.0 * in.rows() / out.rows();
+        double scaleY = 1.0 * in.cols() / out.cols();
+        
+        for (int y = 0; y < out.cols(); y++) {
+            for ( int x = 0; x < out.rows(); x++) {
+                
+                double xx = scaleX * x * 1.0;
+                double yy = scaleY * y * 1.0;
+ 
+                int leftX = (int) (xx);
+                int rightX = (int) (xx + 1);
+                int topY = (int) (yy);
+                int bottomY = (int) (yy + 1);
+
+                if ( rightX >= in.rows() ) {
+                    rightX = in.rows() - 1;
+                    xx = rightX;
+                    leftX = rightX - 1;
+                } 
+                if ( bottomY >= in.cols() ) {
+                    bottomY = in.cols() - 1;
+                    yy = bottomY;
+                    topY = bottomY - 1;
+                }
+                
+                double top = (xx - leftX) * in(leftX, topY) + (rightX - xx) * in(rightX, topY);
+                double bottom = (xx - leftX) * in(leftX, bottomY) + (rightX - xx) * in(rightX, bottomY);
+                
+                out(x,y) = (yy - topY) * top + (bottomY - yy) * bottom;
             }
         } 
 
-        // TODO 
         return BV_OK;
     }
 

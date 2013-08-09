@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
     bv::Image img( colorImage.color(0).width(), colorImage.color(0).height() );
     
     bv::Convert::colorImageToGrayImage(colorImage, img);
+
     bv::Histogram hist(img);
     hist.equaliseImage(img);
 

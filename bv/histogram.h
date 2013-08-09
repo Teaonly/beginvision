@@ -14,7 +14,7 @@ public:
 
         for(int y = 0; y < img.width(); y++) {
             for (int x = 0; x < img.height(); x++) {
-                unsigned char charValue = img.data(y,x) % (img.scale+1);
+                unsigned int charValue = img.data(y,x) % (img.scale+1);
                 hist_[charValue] = hist_[charValue] + 1;
             }
         }
@@ -58,7 +58,7 @@ public:
             } else {
                 sumh = sumh + hist_[i];
             }
-            table[i] = (unsigned int)( img.scale /(img.width()*img.height()) * sumh + 0.0001 );
+            table[i] = (unsigned int)( img.scale * 1.0 /(img.width()*img.height()) * sumh + 0.0001 );
         }
 
         for(int y = 0; y < img.height(); y++) {
