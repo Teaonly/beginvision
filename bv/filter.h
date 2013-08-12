@@ -9,6 +9,25 @@
 
 namespace bv {
 
+class Kernel {
+public: 
+    static Eigen::MatrixXd gaussian_5d() {
+        double cw = 0.375;
+        Eigen::VectorXd ker1d(5);
+        ker1d << (0.25 - cw/2) , 0.25 , cw , 0.25 , (0.25 - cw/2) ;
+        Eigen::MatrixXd ker = ker1d * ker1d.transpose();
+        return ker;
+    }
+
+    static Eigen::MatrixXd gaussian_5i() {
+        Eigen::VectorXd ker1d(5);
+        ker1d << 1 , 4 , 6 , 4 , 1;
+        Eigen::MatrixXd ker = ker1d * ker1d.transpose();
+        return ker;
+    }
+
+};
+
 class Filter {
 public:    
     enum EXTENTION_MODE {
@@ -127,6 +146,7 @@ public:
         return BV_OK;
     }
 
+
     static int withTemplate(Eigen::MatrixXd& in, Eigen::MatrixXd& out, 
                        Eigen::MatrixXd& t, EXTENTION_MODE mode = EXTENTION_REPEAT) { 
         if ( t.rows()%2 == 0 || t.cols()%2 == 0 ) {
@@ -157,16 +177,22 @@ public:
             return BV_ERROR_PARAMETER;
         }
         
-        double tsum = t.cols() * t.rows();
-
+        double tsum = 0;
+        for ( int c = 0; c < t.cols(); c++) {
+            for ( int r = 0; r < t.rows(); r++) {
+                tsum += t(r,c);
+            }
+        }
+                
         for (int c = 0; c < cols; c++) {
             for(int r = 0; r < rows; r++) {
+
                 double sum  = 0.0;
                 for ( int cs = c - hf_cols; cs <= c + hf_cols; cs++) {
                     for ( int rs = r - hf_rows; rs <= r + hf_rows; rs++) {
                         int ct = cs - c + hf_cols;
                         int rt = rs - r + hf_rows;
-                        sum += source( cs + hf_cols, rs + hf_rows) * t(ct, rt);
+                        sum += source( rs + hf_rows, cs + hf_cols) * t(ct, rt);
                     }
                 }
                 sum /= tsum;
@@ -176,7 +202,7 @@ public:
 
         return BV_OK;
     }
-
+    
 };    
 
 }
