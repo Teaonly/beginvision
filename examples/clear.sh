@@ -1,2 +1,2 @@
 #!/bin/sh
-rm *.mk *.Makefile Makefile out -rf
+rm -rf *.mk *.Makefile Makefile out gyp-mac-tool 

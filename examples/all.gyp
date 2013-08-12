@@ -1,9 +1,14 @@
 {
     'target_defaults': {
-        'include_dirs': [
-            '..',
-            '../third_party',
-        ],
+       'default_configuration': 'Debug',
+        'configurations': {
+            'Debug': {
+                'include_dirs': [
+                    '..',
+                    '../third_party',
+                ],
+            },
+        },
     },
     'targets': [
     {
