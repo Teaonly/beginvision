@@ -25,6 +25,14 @@ public:
         Eigen::MatrixXd ker = ker1d * ker1d.transpose();
         return ker;
     }
+    
+    static Eigen::MatrixXd sobel_3d() {
+        Eigen::MatrixXd ker;
+        ker << 1,  2,  1,
+               0,  0,  0,
+              -1, -2, -1 ;
+        return ker;
+    }
 
 };
 
@@ -177,12 +185,14 @@ public:
             return BV_ERROR_PARAMETER;
         }
         
+        /*
         double tsum = 0;
         for ( int c = 0; c < t.cols(); c++) {
             for ( int r = 0; r < t.rows(); r++) {
                 tsum += t(r,c);
             }
         }
+        */
                 
         for (int c = 0; c < cols; c++) {
             for(int r = 0; r < rows; r++) {
@@ -195,7 +205,7 @@ public:
                         sum += source( rs + hf_rows, cs + hf_cols) * t(ct, rt);
                     }
                 }
-                sum /= tsum;
+                //sum /= tsum;
                 out(r, c) = sum;
             }
         }

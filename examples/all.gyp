@@ -53,6 +53,13 @@
             'example6.cpp',
         ],
     },
+    {
+        'target_name': 'ex7',
+        'type': 'executable',
+        'sources': [
+            'example7.cpp',
+        ],
+    },
 
     ],
 }

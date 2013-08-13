@@ -23,22 +23,22 @@ public:
     }
 
 public:
-    int run(Eigen::MatrixXd& img1, Eigen::MatrixXd& img2, const std::vector<double>& sourceX, const std::vector<double>& sourceY, std::vector<double>& destX, std::vector(double)& destY ) {
+    int run(Eigen::MatrixXd& img1, Eigen::MatrixXd& img2, const std::vector<double>& sourceX, const std::vector<double>& sourceY, std::vector<double>& destX, std::vector<double>& destY ) {
         // Check the input and out size  
         if ( (img1.rows () != img2.rows()) || (img1.cols() != img2.cols()) ) {
             return BV_ERROR_PARAMETER;
         }
-        if ( sourceX.size() != sourceY.size() || sourceX <= 0) {
+        if ( sourceX.size() != sourceY.size() || sourceX.size() <= 0) {
             return BV_ERROR_PARAMETER;
         }
-        img1_ = img1;
-        img2_ = img2;
         
          // Building internal image pyramid 
-        int minsize = min( img1_.rows(), img1_.cols() );
+        int wid = img1.rows();
+        int hei = img1.cols();
+        int minsize = Util::min( wid, hei );
         int pyrLevel = (int) log2( minsize / minImageSize_);
-        buildPyr(img1_, imagePyr1_, pyrLevel);
-        buildPyr(img2_, imagePyr2_, pyrLevel);
+        buildPyr(img1, imagePyr1_, pyrLevel);
+        buildPyr(img2, imagePyr2_, pyrLevel);
         
         for(int i = 0; i < (unsigned int)sourceX.size(); i++) {
             double x,y;
@@ -49,30 +49,107 @@ public:
     }
 
 private:
-    void buildPyr(MatrixXd& img, std::vector<Eigen::MatrixXd>& imgPyr, int level) {
+    void buildPyr(Eigen::MatrixXd& img, std::vector<Eigen::MatrixXd>& imgPyr, int level) {
         imgPyr.clear();
         imgPyr.resize(level);
         imgPyr.push_back(img);      // bottom (largest) layer
 
-        filter::Kernel ker = filter::gaussian_5d();
+        Eigen::MatrixXd ker = Kernel::gaussian_5d();
         for(int i = 1; i < level; i++) {
-            MatrixXd d0 = imgPyr[i-1];
-            filter::withTemplate(imgPyr[i-1], d, ker);
-            MatrixXd d1 = MatrixXd(d0.rows()/2, d0.cols()/2);
-            for(int c = 0; c << d1.cols(); c++) {
-                for (int r = 0; r << d1.row(); d1++) {
+            Eigen::MatrixXd d0 = imgPyr[i-1];
+            Filter::withTemplate(imgPyr[i-1], d0, ker);
+            Eigen::MatrixXd d1 = Eigen::MatrixXd(d0.rows()/2, d0.cols()/2);
+            for(int c = 0; c < d1.cols(); c++) {
+                for (int r = 0; r < d1.rows(); r++) {
                     d1(r,c) = d0(r*2, c*2);
                 }
             }
+            
+            Image tmp(d1.rows(), d1.cols());
+            ColorImage<3> tmp2(d1.rows(), d1.cols());
+            Convert::matrixToGrayImage(d1, tmp);
+            Convert::grayImageToColorImage(tmp, tmp2); 
+            tmp2.SaveImageToBMP("/tmp/test.bmp");
+            exit(0);
+
+
             imgPyr.push_back(d1);
         }
     }
 
-    void _LucasKanade(const int sx, const int sy, int& dx, int& dy) {
-        for (int l = imagePyr2_.size() - 1; i >= 0; i-- ) {
-                        
+    void _LucasKanade(const double sx, const double sy, double& dx, double& dy) {
+        double gx = 0.0;
+        double gy = 0.0;
+        
+        double xt = sx / 2;
+        double yt = sy / 2;
+        for(int i = 0; i < imagePyr1_.size(); i++) {
+            xt = xt / 2;
+            yt = yt / 2;
         }
         
+        Eigen::MatrixXd h = Kernel::sobel_3d();    // filter for X direction
+        Eigen::MatrixXd ht = h.transpose();
+        for (int l = imagePyr1_.size() - 1; l >= 0; l-- ) {
+            double xt = xt * 2;
+            double yt = yt * 2;
+ 
+            Eigen::MatrixXd& img1(imagePyr1_[l]);
+            Eigen::MatrixXd& img2(imagePyr2_[l]);
+            Eigen::MatrixXd img1xd(img1.rows(), img1.cols());
+            Eigen::MatrixXd img1yd(img1.rows(), img2.cols());
+            Filter::withTemplate(img1, img1xd, h);
+            Filter::withTemplate(img1, img1yd, ht);
+            
+            // fetch source image patch from img1 
+            Eigen::MatrixXd ps( 2*winR_ + 1, 2*winR_ + 1);
+            Eigen::MatrixXd px( 2*winR_ + 1, 2*winR_ + 1);
+            Eigen::MatrixXd py( 2*winR_ + 1, 2*winR_ + 1);
+            fetchImage(xt, yt, img1, ps);
+            fetchImage(xt, yt, img1xd, px);
+            fetchImage(xt, yt, img1yd, py);
+            Eigen::MatrixXd G(2,2);
+            for(int i = 0; i < ps.cols(); i++) {
+                for ( int j = 0; j < ps.rows(); j++) {
+                    G(0,0) = px(j,i) * px(j,i);
+                    G(0,1) = G(1,0) = py(j,i) * py(j, i);
+                    G(1,1) = py(j,i) * py(j,i);
+                }
+            }
+            
+            std::cout << G << std::endl; 
+
+            /*
+            Eigen::MatrixXd pd( 2*winR_ + 1, 2*winR_ + 1);
+            double vx = 0.0;
+            double vy = 0.0;
+            for ( int i = 0; i < maxIter_; i++) {
+                fetchImage(xt + gx + vx, yt + gy + vy, img2, pd);
+                pd = ps - pd;
+                double bx = 0.0; 
+                double by = 0.0;
+        
+                for(int i = 0; i < ps.cols(); i++) {
+                    for ( int j = 0; j < ps.rows(); j++) {
+                        bx = pd(j,i) * px(j,i) + bx;
+                        by = pd(j,i) * py(j,i) + by;
+                    }   
+                }   
+            }
+            */
+        }
+    }
+    
+    bool fetchImage(double x, double y, Eigen::MatrixXd& img, Eigen::MatrixXd& patch) {
+        if ( x < winR_ || x > img.rows() - winR_ || y < winR_ || y > img.cols() - winR_ ) {
+            return false;
+        }
+        for ( int yy = -1*winR_; yy <= winR_; yy++) {
+            for ( int xx = -1*winR_; xx <= winR_; xx++) {
+                patch(xx + winR_, yy + winR_) = Util::interp2(xx, yy, img);
+            }
+        }
+        return true; 
     }
 
 protected:
@@ -84,10 +161,7 @@ protected:
 private:
     std::vector<Eigen::MatrixXd> imagePyr1_;
     std::vector<Eigen::MatrixXd> imagePyr2_;
-
-    MatrixXd& img1_;
-    MatrixXd& img2_;
-    
 };
 
+}
 #endif
