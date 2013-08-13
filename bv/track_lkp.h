@@ -18,7 +18,7 @@ public:
                    int winR = 5) : 
         maxIter_(maxIter), 
         threshold_(threshold),
-        minImageSize_(minImageSize_),
+        minImageSize_(minImageSize),
         winR_(winR) {
     }
 
@@ -36,7 +36,7 @@ public:
         int wid = img1.rows();
         int hei = img1.cols();
         int minsize = Util::min( wid, hei );
-        int pyrLevel = (int) log2( minsize / minImageSize_);
+        int pyrLevel = (int) log(minsize * 1.0 / minImageSize_) / log(2.0);
         buildPyr(img1, imagePyr1_, pyrLevel);
         buildPyr(img2, imagePyr2_, pyrLevel);
         
@@ -52,7 +52,7 @@ private:
     void buildPyr(Eigen::MatrixXd& img, std::vector<Eigen::MatrixXd>& imgPyr, int level) {
         imgPyr.clear();
         imgPyr.resize(level);
-        imgPyr.push_back(img);      // bottom (largest) layer
+        imgPyr[0] = img;      // bottom (largest) layer
 
         Eigen::MatrixXd ker = Kernel::gaussian_5d();
         for(int i = 1; i < level; i++) {
@@ -65,13 +65,6 @@ private:
                 }
             }
             
-            Image tmp(d1.rows(), d1.cols());
-            ColorImage<3> tmp2(d1.rows(), d1.cols());
-            Convert::matrixToGrayImage(d1, tmp);
-            Convert::grayImageToColorImage(tmp, tmp2); 
-            tmp2.SaveImageToBMP("/tmp/test.bmp");
-            exit(0);
-
 
             imgPyr.push_back(d1);
         }
@@ -81,8 +74,8 @@ private:
         double gx = 0.0;
         double gy = 0.0;
         
-        double xt = sx / 2;
-        double yt = sy / 2;
+        double xt = sx;
+        double yt = sy;
         for(int i = 0; i < imagePyr1_.size(); i++) {
             xt = xt / 2;
             yt = yt / 2;
@@ -91,8 +84,8 @@ private:
         Eigen::MatrixXd h = Kernel::sobel_3d();    // filter for X direction
         Eigen::MatrixXd ht = h.transpose();
         for (int l = imagePyr1_.size() - 1; l >= 0; l-- ) {
-            double xt = xt * 2;
-            double yt = yt * 2;
+            xt = xt * 2;
+            yt = yt * 2;
  
             Eigen::MatrixXd& img1(imagePyr1_[l]);
             Eigen::MatrixXd& img2(imagePyr2_[l]);
@@ -101,6 +94,10 @@ private:
             Filter::withTemplate(img1, img1xd, h);
             Filter::withTemplate(img1, img1yd, ht);
             
+            img1xd.cwiseAbs(); 
+            img1xd = img1xd / 2;
+            Util::saveAsImage(img1xd, "/tmp/1d.bmp");
+
             // fetch source image patch from img1 
             Eigen::MatrixXd ps( 2*winR_ + 1, 2*winR_ + 1);
             Eigen::MatrixXd px( 2*winR_ + 1, 2*winR_ + 1);
@@ -112,14 +109,11 @@ private:
             for(int i = 0; i < ps.cols(); i++) {
                 for ( int j = 0; j < ps.rows(); j++) {
                     G(0,0) = px(j,i) * px(j,i);
-                    G(0,1) = G(1,0) = py(j,i) * py(j, i);
+                    G(0,1) = G(1,0) = px(j,i) * py(j, i);
                     G(1,1) = py(j,i) * py(j,i);
                 }
             }
-            
-            std::cout << G << std::endl; 
 
-            /*
             Eigen::MatrixXd pd( 2*winR_ + 1, 2*winR_ + 1);
             double vx = 0.0;
             double vy = 0.0;
@@ -134,9 +128,9 @@ private:
                         bx = pd(j,i) * px(j,i) + bx;
                         by = pd(j,i) * py(j,i) + by;
                     }   
-                }   
+                }
             }
-            */
+            
         }
     }
     
@@ -146,7 +140,7 @@ private:
         }
         for ( int yy = -1*winR_; yy <= winR_; yy++) {
             for ( int xx = -1*winR_; xx <= winR_; xx++) {
-                patch(xx + winR_, yy + winR_) = Util::interp2(xx, yy, img);
+                patch(xx + winR_, yy + winR_) = Util::interp2(x + xx, y + yy, img);
             }
         }
         return true; 

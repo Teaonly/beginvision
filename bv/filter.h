@@ -27,10 +27,10 @@ public:
     }
     
     static Eigen::MatrixXd sobel_3d() {
-        Eigen::MatrixXd ker;
-        ker << 1,  2,  1,
+        Eigen::MatrixXd ker(3,3);
+        ker << 0, -1,  0,
                0,  0,  0,
-              -1, -2, -1 ;
+               0, -1,  0;
         return ker;
     }
 

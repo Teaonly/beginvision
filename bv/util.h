@@ -27,6 +27,14 @@ double interp2(double x, double y, Eigen::MatrixXd& img) {
     return (y - topY) * top + (bottomY - y) * bottom;
 }
 
+void saveAsImage(Eigen::MatrixXd& x, const std::string& fileName) {
+    Image tmp(x.rows(), x.cols());
+    ColorImage<3> tmp2(x.rows(), x.cols());
+    Convert::matrixToGrayImage(x, tmp);
+    Convert::grayImageToColorImage(tmp, tmp2); 
+    tmp2.SaveImageToBMP(fileName);
+}
+
 }
 }
 #endif
