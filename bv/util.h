@@ -16,15 +16,14 @@ T min(T& v1, T& v2) {
 
 double interp2(double x, double y, Eigen::MatrixXd& img) {
     int leftX = (int) (x);
-    int rightX = (int) (x + 1);
+    int rightX = leftX + 1;
     int topY = (int) (y);
-    int bottomY = (int) (y + 1);
+    int bottomY = topY + 1;
 
-    double top = (x - leftX) * img(leftX, topY) + (rightX - x) * img(rightX, topY);
-    
-    double bottom = (x - leftX) * img(leftX, bottomY) + (rightX - x) * img(rightX, bottomY);
+    double top = (x - leftX) * img(rightX, topY) + (rightX - x) * img(leftX, topY);
+    double bottom = (x - leftX) * img(rightX, bottomY) + (rightX - x) * img(leftX, bottomY);
                 
-    return (y - topY) * top + (bottomY - y) * bottom;
+    return (y - topY) * bottom + (bottomY - y) * top;
 }
 
 void saveAsImage(Eigen::MatrixXd& x, const std::string& fileName) {

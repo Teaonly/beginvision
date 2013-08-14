@@ -202,7 +202,7 @@ public:
                     for ( int rs = r - hf_rows; rs <= r + hf_rows; rs++) {
                         int ct = cs - c + hf_cols;
                         int rt = rs - r + hf_rows;
-                        sum += source( rs + hf_rows, cs + hf_cols) * t(ct, rt);
+                        sum += source( rs + hf_rows, cs + hf_cols) * t(rt, ct);
                     }
                 }
                 //sum /= tsum;

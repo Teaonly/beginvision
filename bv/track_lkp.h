@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <Eigen/Core>
+#include <Eigen/LU> 
 #include <cmath>
 #include "beginvision.h"
 #include "filter.h"
@@ -31,6 +32,8 @@ public:
         if ( sourceX.size() != sourceY.size() || sourceX.size() <= 0) {
             return BV_ERROR_PARAMETER;
         }
+        destX.resize( sourceX.size() );
+        destY.resize( sourceY.size() );
         
          // Building internal image pyramid 
         int wid = img1.rows();
@@ -43,6 +46,8 @@ public:
         for(int i = 0; i < (unsigned int)sourceX.size(); i++) {
             double x,y;
             _LucasKanade(sourceX[i], sourceY[i], x, y);
+            destX[i] = x;
+            destY[i] = y;            
         }
         
         return BV_OK;
@@ -81,8 +86,13 @@ private:
             yt = yt / 2;
         }
         
-        Eigen::MatrixXd h = Kernel::sobel_3d();    // filter for X direction
+        Eigen::MatrixXd h(3,1);
+        h(0,0) = -0.5;
+        h(1,0) = 0;
+        h(2,0) = 0.5;
+
         Eigen::MatrixXd ht = h.transpose();
+        
         for (int l = imagePyr1_.size() - 1; l >= 0; l-- ) {
             xt = xt * 2;
             yt = yt * 2;
@@ -94,9 +104,10 @@ private:
             Filter::withTemplate(img1, img1xd, h);
             Filter::withTemplate(img1, img1yd, ht);
             
-            img1xd.cwiseAbs(); 
-            img1xd = img1xd / 2;
-            Util::saveAsImage(img1xd, "/tmp/1d.bmp");
+            /* 
+            Eigen::MatrixXd temp = img1xd.cwiseAbs();
+            Util::saveAsImage(temp, "/tmp/diff.bmp");
+            */
 
             // fetch source image patch from img1 
             Eigen::MatrixXd ps( 2*winR_ + 1, 2*winR_ + 1);
@@ -105,33 +116,46 @@ private:
             fetchImage(xt, yt, img1, ps);
             fetchImage(xt, yt, img1xd, px);
             fetchImage(xt, yt, img1yd, py);
-            Eigen::MatrixXd G(2,2);
+           
+            Eigen::MatrixXd G = Eigen::MatrixXd::Zero(2,2);
             for(int i = 0; i < ps.cols(); i++) {
                 for ( int j = 0; j < ps.rows(); j++) {
-                    G(0,0) = px(j,i) * px(j,i);
-                    G(0,1) = G(1,0) = px(j,i) * py(j, i);
-                    G(1,1) = py(j,i) * py(j,i);
+                    G(0,0) = px(j,i) * px(j,i) + G(0, 0);
+                    G(0,1) = px(j,i) * py(j, i) + G(0, 1);
+                    G(1,1) = py(j,i) * py(j,i) + G(1,1);
                 }
             }
+            G(1,0) = G(0,1);
 
+    
             Eigen::MatrixXd pd( 2*winR_ + 1, 2*winR_ + 1);
             double vx = 0.0;
             double vy = 0.0;
             for ( int i = 0; i < maxIter_; i++) {
                 fetchImage(xt + gx + vx, yt + gy + vy, img2, pd);
                 pd = ps - pd;
-                double bx = 0.0; 
-                double by = 0.0;
-        
+                Eigen::VectorXd b(2); 
+
                 for(int i = 0; i < ps.cols(); i++) {
                     for ( int j = 0; j < ps.rows(); j++) {
-                        bx = pd(j,i) * px(j,i) + bx;
-                        by = pd(j,i) * py(j,i) + by;
+                        b(0) = pd(j,i) * px(j,i) + b(0);
+                        b(1) = pd(j,i) * py(j,i) + b(1);
                     }   
                 }
+                
+                Eigen::VectorXd delta(2);
+                delta = G.inverse() * b;
+                
+                vx = vx + delta(0);
+                vy = vy + delta(1);
             }
-            
+
+            gx = gx + vx;
+            gy = gy + vy;
         }
+    
+        dx = gx;
+        dy = gy;
     }
     
     bool fetchImage(double x, double y, Eigen::MatrixXd& img, Eigen::MatrixXd& patch) {
@@ -143,6 +167,12 @@ private:
                 patch(xx + winR_, yy + winR_) = Util::interp2(x + xx, y + yy, img);
             }
         }
+        
+        for ( int yy = -1*winR_ - 1; yy <= winR_ + 1; yy++) {
+            img(x - winR_ - 1, y+yy) = 1;
+            img(x + winR_ + 1, y+yy) = 1;
+        }
+
         return true; 
     }
 

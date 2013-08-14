@@ -97,10 +97,10 @@ public:
                     topY = bottomY - 1;
                 }
                 
-                double top = (xx - leftX) * in(leftX, topY) + (rightX - xx) * in(rightX, topY);
-                double bottom = (xx - leftX) * in(leftX, bottomY) + (rightX - xx) * in(rightX, bottomY);
+                double top = (xx - leftX) * in(rightX, topY) + (rightX - xx) * in(leftX, topY);
+                double bottom = (xx - leftX) * in(rightX, bottomY) + (rightX - xx) * in(leftX, bottomY);
                 
-                out(x,y) = (yy - topY) * top + (bottomY - yy) * bottom;
+                out(x,y) = (yy - topY) * bottom + (bottomY - yy) * top;
             }
         } 
 

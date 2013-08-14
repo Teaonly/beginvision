@@ -35,6 +35,6 @@ int main(int argc, char *argv[]) {
     ysource.push_back(186);
 
     tracker.run(g1, g2, xsource, ysource, xresult, yresult);
-    //std::cout << "<vx, vy> = <" << xresult[0] << "," << yresult[0] << ">" << std::endl;
+    std::cout << "<vx, vy> = <" << xresult[0] << "," << yresult[0] << ">" << std::endl;
 }
 
