@@ -104,11 +104,6 @@ private:
             Filter::withTemplate(img1, img1xd, h);
             Filter::withTemplate(img1, img1yd, ht);
             
-            /* 
-            Eigen::MatrixXd temp = img1xd.cwiseAbs();
-            Util::saveAsImage(temp, "/tmp/diff.bmp");
-            */
-
             // fetch source image patch from img1 
             Eigen::MatrixXd ps( 2*winR_ + 1, 2*winR_ + 1);
             Eigen::MatrixXd px( 2*winR_ + 1, 2*winR_ + 1);
@@ -118,16 +113,16 @@ private:
             fetchImage(xt, yt, img1yd, py);
            
             Eigen::MatrixXd G = Eigen::MatrixXd::Zero(2,2);
+            std::cout << G << std::endl;
             for(int i = 0; i < ps.cols(); i++) {
                 for ( int j = 0; j < ps.rows(); j++) {
-                    G(0,0) = px(j,i) * px(j,i) + G(0, 0);
-                    G(0,1) = px(j,i) * py(j, i) + G(0, 1);
+                    G(0,0) = px(j,i) * px(j,i) + G(0,0);
+                    G(0,1) = px(j,i) * py(j, i) + G(0,1);
                     G(1,1) = py(j,i) * py(j,i) + G(1,1);
                 }
             }
             G(1,0) = G(0,1);
 
-    
             Eigen::MatrixXd pd( 2*winR_ + 1, 2*winR_ + 1);
             double vx = 0.0;
             double vy = 0.0;
@@ -135,11 +130,15 @@ private:
                 fetchImage(xt + gx + vx, yt + gy + vy, img2, pd);
                 pd = ps - pd;
                 Eigen::VectorXd b(2); 
-
+                b(0) = 0.0;
+                b(1) = 0.0;
+                
+                double dsum = 0.0;
                 for(int i = 0; i < ps.cols(); i++) {
                     for ( int j = 0; j < ps.rows(); j++) {
                         b(0) = pd(j,i) * px(j,i) + b(0);
                         b(1) = pd(j,i) * py(j,i) + b(1);
+                        dsum = dsum + pd(j,i)*pd(j,i);
                     }   
                 }
                 
@@ -148,6 +147,9 @@ private:
                 
                 vx = vx + delta(0);
                 vy = vy + delta(1);
+
+                std::cout << delta << std::endl;
+                std::cout << "SSD = " << dsum << std::endl;
             }
 
             gx = gx + vx;
