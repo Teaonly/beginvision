@@ -31,10 +31,24 @@ int main(int argc, char *argv[]) {
     std::vector<double> ysource;
     std::vector<double> xresult;
     std::vector<double> yresult;
-    xsource.push_back(200);
-    ysource.push_back(186);
+
+    int xx = 182;
+    int yy = 186;
+
+    xsource.push_back(xx);
+    ysource.push_back(yy);
 
     tracker.run(g1, g2, xsource, ysource, xresult, yresult);
     std::cout << "<vx, vy> = <" << xresult[0] << "," << yresult[0] << ">" << std::endl;
+    
+    for ( int y = yy - 5; y <= yy + 5; y++) {
+        c1.color(0).data(xx, y) = c1.color(2).data(xx, y) = 0;
+        c1.color(1).data(xx, y) = 255;
+
+        c2.color(0).data(xx+xresult[0], y+yresult[0]) = c2.color(2).data(xx+xresult[0], y+yresult[0]) = 0;
+        c2.color(1).data(xx+xresult[0], y+yresult[0]) = 255;
+    }
+    c1.SaveImageToBMP("/tmp/1x.bmp");
+    c2.SaveImageToBMP("/tmp/2x.bmp");
 }
 
