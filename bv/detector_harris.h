@@ -60,6 +60,11 @@ public:
                 Eigen::MatrixXd Hs = Eigen::MatrixXd::Zero(2,2);
                 for(int xx = x - winR_; xx <=  x+winR_; xx++) {
                     for (int yy = y - winR_; yy <= y+winR_; yy++) {
+                        /*
+                        Hs(0,0) = imgXd(xx,yy) * imgXd(xx,yy)*ker(xx-x+winR_,yy-y+winR_) + Hs(0,0);
+                        Hs(1,1) = imgYd(xx,yy) * imgYd(xx,yy)*ker(xx-x+winR_,yy-y+winR_) + Hs(1,1);
+                        Hs(0,1) = imgXd(xx,yy) * imgYd(xx,yy)*ker(xx-x+winR_,yy-y+winR_) + Hs(0,1);
+                        */
                         Hs(0,0) = imgXd(xx,yy) * imgXd(xx,yy) + Hs(0,0);
                         Hs(1,1) = imgYd(xx,yy) * imgYd(xx,yy) + Hs(1,1);
                         Hs(0,1) = imgXd(xx,yy) * imgYd(xx,yy) + Hs(0,1);
