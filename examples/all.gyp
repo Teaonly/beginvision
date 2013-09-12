@@ -7,6 +7,9 @@
                     '..',
                     '../third_party',
                 ],
+                'cflags': [
+                    '-g',
+                ],
             },
         },
     },
@@ -60,6 +63,14 @@
             'example7.cpp',
         ],
     },
+    {
+        'target_name': 'ex8',
+        'type': 'executable',
+        'sources': [
+            'example8.cpp',
+        ],
+    },
+
 
     ],
 }

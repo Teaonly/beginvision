@@ -12,6 +12,7 @@ namespace bv {
 class Kernel {
 public: 
     static Eigen::MatrixXd gaussian_5d() {
+        // sigma = 1;
         double cw = 0.375;
         Eigen::VectorXd ker1d(5);
         ker1d << (0.25 - cw/2) , 0.25 , cw , 0.25 , (0.25 - cw/2) ;
