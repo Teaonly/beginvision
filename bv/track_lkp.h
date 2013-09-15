@@ -59,7 +59,7 @@ private:
         imgPyr.resize(level);
         imgPyr[0] = img;      // bottom (largest) layer
         
-        Eigen::MatrixXd ker = Kernel::gaussian_5d();        
+        Eigen::MatrixXd ker = Kernel::gaussian(2, 1);        
         //Filter::withTemplate(img, imgPyr[0], ker);
 
         for(int i = 1; i < level; i++) {

@@ -11,30 +11,20 @@ namespace bv {
 
 class Kernel {
 public: 
-    static Eigen::MatrixXd gaussian_5d() {
-        // sigma = 1;
-        double cw = 0.375;
-        Eigen::VectorXd ker1d(5);
-        ker1d << (0.25 - cw/2) , 0.25 , cw , 0.25 , (0.25 - cw/2) ;
-        Eigen::MatrixXd ker = ker1d * ker1d.transpose();
+    static Eigen::MatrixXd gaussian(int hfSize, double sigma) {
+        Eigen::MatrixXd ker(hfSize*2+1, hfSize*2+1);
+        double sum = 0.0;
+        for(int i = 0; i < hfSize*2+1 ; i++) {
+            for  (int j = 0; j < hfSize*2+1; j++) {
+                double x = j - hfSize;
+                double y = i - hfSize;
+                ker(j, i) = exp(-1*(x*x+y*y)/(2*sigma*sigma)) / (2*pi*sigma*sigma);
+                sum = sum + ker(j, i);
+            }
+        }
+        ker = ker / sum;
         return ker;
     }
-
-    static Eigen::MatrixXd gaussian_5i() {
-        Eigen::VectorXd ker1d(5);
-        ker1d << 1 , 4 , 6 , 4 , 1;
-        Eigen::MatrixXd ker = ker1d * ker1d.transpose();
-        return ker;
-    }
-    
-    static Eigen::MatrixXd sobel_3d() {
-        Eigen::MatrixXd ker(3,3);
-        ker << 0, -1,  0,
-               0,  0,  0,
-               0, -1,  0;
-        return ker;
-    }
-
 };
 
 class Filter {
