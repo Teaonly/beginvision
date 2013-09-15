@@ -13,9 +13,9 @@ namespace bv {
 
 class DT_Harris {
 public:
-    DT_Harris(double threshold = 0.01,
+    DT_Harris(double threshold = 0.0001,
               double alpha = 0.04, 
-              int winR = 5):
+              int winR = 8):
         threshold_(threshold),
         alpha_(alpha),
         winR_(winR) {
@@ -79,7 +79,7 @@ public:
         
         for (int x = 0; x < sImg.rows(); x++) {
             for ( int y = 0; y < sImg.cols(); y++) {
-                if ( fabs(rep(x,y)) > 0.001  ) {
+                if ( fabs(rep(x,y)) > threshold_  ) {
                     if ( fabs(rep(x,y)) > fabs(rep(x+1,y)) &&
                          fabs(rep(x,y)) > fabs(rep(x-1,y)) &&  
                          fabs(rep(x,y)) > fabs(rep(x,y+1)) &&
