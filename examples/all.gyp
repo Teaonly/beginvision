@@ -70,6 +70,13 @@
             'example8.cpp',
         ],
     },
+    {
+        'target_name': 'ex9',
+        'type': 'executable',
+        'sources': [
+            'example9.cpp',
+        ],
+    },
 
 
     ],

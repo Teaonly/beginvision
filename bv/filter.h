@@ -25,6 +25,23 @@ public:
         ker = ker / sum;
         return ker;
     }
+
+    static Eigen::MatrixXd laplacianGaussian(int hfSize, double sigma) {
+        Eigen::MatrixXd ker(hfSize*2+1, hfSize*2+1);
+        for(int i = 0; i < hfSize*2+1 ; i++) {
+            for  (int j = 0; j < hfSize*2+1; j++) {
+                double x = j - hfSize;
+                double y = i - hfSize;
+            
+                ker(j, i) = exp(-1*(x*x+y*y)/(2*sigma*sigma)) / (pi*sigma*sigma*sigma*sigma) ;
+                ker(j, i) = ker(j, i) * ((x*x+y*y)/(2*sigma*sigma) - 1);
+            }
+        }
+        
+        return ker;
+    }
+
+
 };
 
 class Filter {
