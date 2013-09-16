@@ -13,7 +13,7 @@ namespace bv {
 
 class DT_Harris {
 public:
-    DT_Harris(double threshold = 0.0001,
+    DT_Harris(double threshold = 0.0005,
               double alpha = 0.04, 
               int winR = 8):
         threshold_(threshold),
@@ -87,9 +87,7 @@ public:
                          fabs(rep(x,y)) > fabs(rep(x+1,y-1)) &&
                          fabs(rep(x,y)) > fabs(rep(x-1,y+1)) &&
                          fabs(rep(x,y)) > fabs(rep(x+1,y+1)) &&  
-                         fabs(rep(x,y)) > fabs(rep(x-1,y-1)) )
-                         {
-                        
+                         fabs(rep(x,y)) > fabs(rep(x-1,y-1)) ) {
                         resultX.push_back(x);
                         resultY.push_back(y);                        
                     }  
