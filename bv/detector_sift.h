@@ -7,7 +7,9 @@
 #include <cmath>
 #include "beginvision.h"
 #include "filter.h"
+#include "image_convert.h"
 #include "util.h"
+
 
 namespace bv {
 
@@ -19,13 +21,22 @@ public:
     
 public:
     int run(Eigen::MatrixXd& img) {
-        // normlized image
+        // 0. normlized image
         Eigen::MatrixXd I = img;
         I = I - Eigen::MatrixXd::Ones(img.rows(), img.cols()) * I.minCoeff();
         I = I / I.maxCoeff();    
-        
-        
+            
+        // 1. double original image
+        if ( initDoubled_ ) {
+            Eigen::MatrixXd doubleI ( img.rows(), img.cols() );
+            Convert::resizeImage(I, doubleI);
+            I = doubleI;
+        }
 
+        // 2. building scale-space image
+         
+
+        
         return BV_OK;
     }
 
