@@ -47,12 +47,13 @@ public:
 class Filter {
 public:    
     enum EXTENTION_MODE {
+        EXTENTION_NEAR = 0,
         EXTENTION_REPEAT = 1,
         EXTENTION_ZERO = 2,
         EXTENTION_SKIP = 3,
     };
 
-    static int gaussianBlur(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, double sigma, EXTENTION_MODE mode = EXTENTION_REPEAT) {
+    static int gaussianBlur(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, double sigma, EXTENTION_MODE mode = EXTENTION_NEAR) {
         if ( size%2 == 0) {
             return BV_ERROR_PARAMETER;
         }
@@ -92,6 +93,24 @@ public:
                     source(r, c) = in(r_source, c_source);
                 }
             } 
+        } if ( mode == EXTENTION_NEAR ) {
+            for (int c = 0; c < cols + ext_size*2; c++) {
+                int c_source = c - ext_size;
+                if ( c_source < 0) {
+                    c_source = 0; 
+                } else if ( c_source >= cols) {
+                    c_source = cols - 1;
+                }
+                for(int r = 0; r < rows + ext_size*2; r++) {
+                    int r_source = r - ext_size;
+                    if ( r_source < 0) {
+                        r_source = 0; 
+                    } else if ( r_source >= cols) {
+                        r_source = rows - 1;
+                    }
+                    source(r, c) = in(r_source, c_source);
+                }
+            }
         } else {
             return BV_ERROR_PARAMETER;
         }
@@ -119,7 +138,7 @@ public:
         return BV_OK;
     }
 
-    static int average(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, EXTENTION_MODE mode = EXTENTION_REPEAT) { 
+    static int average(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, EXTENTION_MODE mode = EXTENTION_NEAR) { 
         // Change size to a odd value
         if ( size%2 == 0 ) {
             return BV_ERROR_PARAMETER;
@@ -143,6 +162,24 @@ public:
                     source(r, c) = in(r_source, c_source);
                 }
             } 
+        } if ( mode == EXTENTION_NEAR ) {
+            for (int c = 0; c < cols + hf_size*2; c++) {
+                int c_source = c - hf_size;
+                if ( c_source < 0) {
+                    c_source = 0; 
+                } else if ( c_source >= cols) {
+                    c_source = cols - 1;
+                }
+                for(int r = 0; r < rows + hf_size*2; r++) {
+                    int r_source = r - hf_size;
+                    if ( r_source < 0) {
+                        r_source = 0; 
+                    } else if ( r_source >= rows) {
+                        r_source = rows - 1;
+                    }
+                    source(r, c) = in(r_source, c_source);
+                }
+            }
         } else {
             return BV_ERROR_PARAMETER;
         }
@@ -164,7 +201,7 @@ public:
 
 
     static int withTemplate(Eigen::MatrixXd& in, Eigen::MatrixXd& out, 
-                       Eigen::MatrixXd& t, EXTENTION_MODE mode = EXTENTION_REPEAT) { 
+                       Eigen::MatrixXd& t, EXTENTION_MODE mode = EXTENTION_NEAR) { 
         if ( t.rows()%2 == 0 || t.cols()%2 == 0 ) {
             return BV_ERROR_PARAMETER;
         }
@@ -188,7 +225,25 @@ public:
                     int r_source = ( r + 2*rows - hf_rows ) % rows;
                     source(r, c) = in(r_source, c_source);
                 }
-            } 
+            }
+        } if ( mode == EXTENTION_NEAR ) {
+            for (int c = 0; c < cols + hf_cols*2; c++) {
+                int c_source = c - hf_cols;
+                if ( c_source < 0) {
+                    c_source = 0; 
+                } else if ( c >= cols) {
+                    c_source = cols - 1;
+                }
+                for(int r = 0; r < rows + hf_rows*2; r++) {
+                    int r_source = r - hf_rows;
+                    if ( r_source < 0) {
+                        r_source = 0; 
+                    } else if ( r_source >= rows) {
+                        r_source = rows - 1;
+                    }
+                    source(r, c) = in(r_source, c_source);
+                }
+            }
         } else {
             return BV_ERROR_PARAMETER;
         }

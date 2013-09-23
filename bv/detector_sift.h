@@ -13,21 +13,24 @@ namespace bv {
 
 class DT_Sift {
 public:
-    DT_Sift( ) {
+    DT_Sift(bool initDoubled = false): 
+        initDoubled_(initDoubled)  {
     }
     
 public:
     int run(Eigen::MatrixXd& img) {
-        // normlized imag
+        // normlized image
         Eigen::MatrixXd I = img;
-        //I = I - I.minCoeff();
-        //I = I / I.maxCoeff();    
+        I = I - Eigen::MatrixXd::Ones(img.rows(), img.cols()) * I.minCoeff();
+        I = I / I.maxCoeff();    
+        
+        
 
         return BV_OK;
     }
 
 protected:
-    
+    bool initDoubled_;
 };
 
 }

@@ -4,7 +4,6 @@
 #include <bv/image.h>
 #include <bv/image_convert.h>
 #include <bv/filter.h>
-#include <bv/detector_sift.h>
 
 int run(Eigen::MatrixXd& img, Eigen::MatrixXd& img2, const double sigma) {
     int hfSize = (int)(sigma*3.0);

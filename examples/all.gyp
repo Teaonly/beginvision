@@ -77,6 +77,13 @@
             'example9.cpp',
         ],
     },
+    {
+        'target_name': 'ex10',
+        'type': 'executable',
+        'sources': [
+            'example10.cpp',
+        ],
+    },
 
 
     ],
