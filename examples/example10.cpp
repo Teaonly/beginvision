@@ -21,6 +21,9 @@ int main(int argc, char *argv[]) {
     bv::Convert::colorImageToGrayImage(c1, i1);
     bv::Convert::grayImageToMatrix( i1, g1);
     
+    bv::DT_Sift detector;
+    detector.run(g1);
+        
     
     return 0;
 }
