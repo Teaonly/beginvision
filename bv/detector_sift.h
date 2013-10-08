@@ -43,10 +43,11 @@ public:
 
         // 2. building scale-space image
         buildOctaves(I);
-
+        buildDoG();        
+        
         // 3. detect maxima and minima of difference-of-Gaussian in scale space
-        
-        
+        doDetect();
+
         return BV_OK;
     }
 
@@ -70,6 +71,7 @@ private:
     void buildOctaves( Eigen::MatrixXd& I) {
         Eigen::MatrixXd bottomLevel = I;
         double bottomSigma = sigma0_ * powf(2, minOctave_);
+        octaves_.clear();
 
         if ( bottomSigma > sigmaNominal_ * powf(2, minOctave_)) {
             double sa = bottomSigma;
@@ -87,8 +89,8 @@ private:
             int currentOctave = oi + minOctave_;
         
             SiftImageOctave octave;
-            octave.wid_ = bottomLevel.rows();
-            octave.hei_ = bottomLevel.cols();
+            octave.width_ = bottomLevel.rows();
+            octave.height_ = bottomLevel.cols();
             octave.images_.push_back( bottomLevel );
             Eigen::MatrixXd lastLevel = bottomLevel;
             
@@ -113,13 +115,95 @@ private:
         }    
     }
 
+    void buildDoG() {
+         for(int oi = 0; oi < numOctaves_; oi++) {
+            for ( int li = 0; li < numLevels_ - 1; li++) {
+                Eigen::MatrixXd dog = octaves_[oi].images_[li+1] - octaves_[oi].images_[li];
+                octaves_[oi].dogs_.push_back(dog);
+            }
+         }
+    }
+
+    void doDetect() {
+        keyPoints_.clear();
+
+        for(int oi = 0; oi < numOctaves_; oi++) {
+            for ( int si = 0; si < numLevels_ - 2; si++) {
+                int up = si+2; 
+                int middle = si+1;
+                int down = si;
+
+                for(int x = 1; x < octaves_[oi].width_ - 1; x++) {
+                    for(int y = 1; y < octaves_[oi].height_ - 1; y++) {
+                        double centerValue = octaves_[oi].dogs_[middle](x, y);
+                        bool isMin = true;
+                        bool isMax = true;
+                        for(int xx = x-1; xx <= x+1; xx++) {
+                            for(int yy = y-1; yy <= y+1; yy++) {
+                                if ( xx != x || yy != y) {
+                                    if ( octaves_[oi].dogs_[up](xx,yy) <= centerValue 
+                                         || octaves_[oi].dogs_[middle](xx,yy) <= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) <= centerValue ) {
+                                        isMax = false;    
+                                    } 
+
+                                    if ( octaves_[oi].dogs_[up](xx,yy) >= centerValue 
+                                         || octaves_[oi].dogs_[middle](xx,yy) >= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) >= centerValue ) {
+                                        isMin = false;    
+                                    } 
+
+                                } else {
+                                    if ( octaves_[oi].dogs_[up](xx,yy) <= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) <= centerValue ) {
+                                        isMax = false;    
+                                    } 
+
+                                    if ( octaves_[oi].dogs_[up](xx,yy) >= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) >= centerValue ) {
+                                        isMin = false;    
+                                    }                                            
+                                }
+
+                                if ( isMin == false && isMax == false) {
+                                    goto _detect_done;
+                                }
+                            }
+                        }
+_detect_done:
+                        if ( isMin || isMax ) {
+                            SiftKeyPoint oneKey;
+                            oneKey.x_ = x;
+                            oneKey.y_ = y;
+                            oneKey.levelIndex_ = si;
+                            oneKey.octaveIndex_ = oi;
+                            oneKey.scaleValue_ = sigma0_ * powf(2, oi + (si+1)/S_);
+                            keyPoints_.push_back(oneKey);                            
+                        }
+                    }
+                }
+
+            }
+        }
+    }
 
 protected:
+    typedef struct {
+        unsigned int x_;
+        unsigned int y_;
+        unsigned int levelIndex_;
+        unsigned int octaveIndex_;
+
+        double xx_;
+        double yy_;
+        double scaleValue_;
+    } SiftKeyPoint;
 
     typedef struct {
-        unsigned int wid_;
-        unsigned int hei_;
-        std::vector<Eigen::MatrixXd > images_;
+        unsigned int width_;
+        unsigned int height_;
+        std::vector<Eigen::MatrixXd> images_;
+        std::vector<Eigen::MatrixXd> dogs_;
     } SiftImageOctave;
 
     // passed from parameters
@@ -135,6 +219,7 @@ protected:
     double dsigma_;
 
     std::vector<SiftImageOctave> octaves_;
+    std::vector<SiftKeyPoint> keyPoints_;
 };
 
 }

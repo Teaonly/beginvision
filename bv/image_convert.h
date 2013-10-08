@@ -78,8 +78,8 @@ public:
         for (int y = 0; y < out.cols(); y++) {
             for ( int x = 0; x < out.rows(); x++) {
                 
-                double xx = scaleX * x * 1.0;
-                double yy = scaleY * y * 1.0;
+                double xx = scaleX * x * 1.0 + 0.01;
+                double yy = scaleY * y * 1.0 + 0.01;
  
                 int leftX = (int) (xx);
                 int rightX = (int) (xx + 1);
