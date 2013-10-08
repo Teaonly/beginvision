@@ -23,6 +23,8 @@ public:
         k = powf(2, 1/S_);
         sigmaNominal_ = 0.5;
         sigma0_ = 1.6; 
+        dsigma_ = sqrt(powf(2, 2.0/S_) - 1); 
+        std::cout << "dsigma_ = " << dsigma_ << std::endl; 
     }
     
 public:
@@ -40,7 +42,10 @@ public:
     
 
         // 2. building scale-space image
-        buildOctaves(I); 
+        buildOctaves(I);
+
+        // 3. detect maxima and minima of difference-of-Gaussian in scale space
+        
         
         return BV_OK;
     }
@@ -78,33 +83,34 @@ private:
             bottomLevel = temp;
         }
 
-        for(int oi = 0; oi < 1; oi++) {
+        for(int oi = 0; oi < numOctaves_; oi++) {
             int currentOctave = oi + minOctave_;
         
             SiftImageOctave octave;
             octave.wid_ = bottomLevel.rows();
             octave.hei_ = bottomLevel.cols();
-            octave.images_.push_back( std::pair<double, Eigen::MatrixXd> (bottomSigma, bottomLevel) );
-            double lastSigma = bottomSigma;
+            octave.images_.push_back( bottomLevel );
             Eigen::MatrixXd lastLevel = bottomLevel;
             
             for ( int li = 1; li < numLevels_; li++) {
-                double currentSigma = sigma0_ * powf(2, li * 1.0 / S_);
-                double diffSigma = sqrt( currentSigma*currentSigma - lastSigma*lastSigma);
-                lastSigma = currentSigma;
 
                 Eigen::MatrixXd temp = lastLevel;
-
-                std::cout << " sigma = " << diffSigma << std::endl;
-                Filter::gaussianBlur(lastLevel, temp, (int)(currentSigma*3+0.5)*2 + 1, currentSigma);
                 
-                octave.images_.push_back( std::pair<double, Eigen::MatrixXd> (currentSigma, temp) );
+                double diffSigma = sigma0_ * dsigma_ * powf(2, (li-1)*1.0/S_);
+                std::cout << " sigma = " << diffSigma << std::endl;
+                Filter::gaussianBlur(lastLevel, temp, (int)(diffSigma*3+0.5)*2 + 1, diffSigma);
+                octave.images_.push_back(temp);
+                
                 lastLevel = temp;
             }
-             
+            if ( oi != (numOctaves_ - 1) ) {
+                // prepare for next octave
+                bottomLevel.resize( bottomLevel.rows()/2, bottomLevel.cols()/2);
+                // TODO using downsample replacing resize.
+                Convert::resizeImage( octave.images_[S_], bottomLevel);
+            }
+            octaves_.push_back(octave);
         }    
-    
-    
     }
 
 
@@ -113,20 +119,20 @@ protected:
     typedef struct {
         unsigned int wid_;
         unsigned int hei_;
-        std::vector<std::pair<double, Eigen::MatrixXd> > images_;
+        std::vector<Eigen::MatrixXd > images_;
     } SiftImageOctave;
 
     // passed from parameters
     int numOctaves_;
     int numLevels_;
     int minOctave_;
-    int minLevel_;
     int S_;
     
     // initialed in creator
     double k;
     double sigmaNominal_;
     double sigma0_;
+    double dsigma_;
 
     std::vector<SiftImageOctave> octaves_;
 };
