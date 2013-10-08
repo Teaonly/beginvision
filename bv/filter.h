@@ -105,7 +105,7 @@ public:
                     int r_source = r - ext_size;
                     if ( r_source < 0) {
                         r_source = 0; 
-                    } else if ( r_source >= cols) {
+                    } else if ( r_source >= rows) {
                         r_source = rows - 1;
                     }
                     source(r, c) = in(r_source, c_source);
