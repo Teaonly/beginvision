@@ -128,10 +128,10 @@ private:
         keyPoints_.clear();
 
         for(int oi = 0; oi < numOctaves_; oi++) {
-            for ( int si = 0; si < numLevels_ - 2; si++) {
-                int up = si+2; 
-                int middle = si+1;
-                int down = si;
+            for ( int si = 1; si < numLevels_ - 2; si++) {
+                int up = si+1; 
+                int middle = si;
+                int down = si-1;
 
                 for(int x = 1; x < octaves_[oi].width_ - 1; x++) {
                     for(int y = 1; y < octaves_[oi].height_ - 1; y++) {
@@ -177,12 +177,11 @@ _detect_done:
                             oneKey.y_ = y;
                             oneKey.levelIndex_ = si;
                             oneKey.octaveIndex_ = oi;
-                            oneKey.scaleValue_ = sigma0_ * powf(2, oi + (si+1)/S_);
+                            oneKey.scaleValue_ = sigma0_ * powf(2, oi + si/S_);
                             keyPoints_.push_back(oneKey);                            
                         }
                     }
                 }
-
             }
         }
     }
