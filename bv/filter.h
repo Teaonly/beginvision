@@ -53,7 +53,7 @@ public:
         EXTENTION_SKIP = 3,
     };
 
-    static int gaussianBlur(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, double sigma, EXTENTION_MODE mode = EXTENTION_NEAR) {
+    static int gaussianBlur(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, double sigma, EXTENTION_MODE mode = EXTENTION_ZERO) {
         if ( size%2 == 0) {
             return BV_ERROR_PARAMETER;
         }
@@ -78,6 +78,7 @@ public:
                 tplSum = tplSum + gaussian1D[i]*gaussian1D[j]; 
             }
         }
+
         
         int cols = in.cols();
         int rows = in.rows();
@@ -93,7 +94,7 @@ public:
                     source(r, c) = in(r_source, c_source);
                 }
             } 
-        } if ( mode == EXTENTION_NEAR ) {
+        } else if ( mode == EXTENTION_NEAR ) {
             for (int c = 0; c < cols + ext_size*2; c++) {
                 int c_source = c - ext_size;
                 if ( c_source < 0) {
@@ -108,6 +109,19 @@ public:
                     } else if ( r_source >= rows) {
                         r_source = rows - 1;
                     }
+                    source(r, c) = in(r_source, c_source);
+                }
+            }
+        } else if ( mode == EXTENTION_ZERO) {
+            for (int c = 0; c < cols + ext_size*2; c++) {
+                for(int r = 0; r < rows + ext_size*2; r++) {
+                    source(r, c) = 0;
+                }
+            }
+            for (int c = ext_size; c < cols + ext_size; c++) {
+                int c_source = ( c + 2*cols - ext_size ) % cols;
+                for(int r = ext_size; r < rows + ext_size; r++) {
+                    int r_source = ( r + 2*rows - ext_size ) % rows;
                     source(r, c) = in(r_source, c_source);
                 }
             }
@@ -180,6 +194,19 @@ public:
                     source(r, c) = in(r_source, c_source);
                 }
             }
+        } else if ( mode == EXTENTION_ZERO) {
+            for (int c = 0; c < cols + hf_size*2; c++) {
+                for(int r = 0; r < rows + hf_size*2; r++) {
+                    source(r, c) = 0;
+                }
+            }
+            for (int c = hf_size; c < cols + hf_size; c++) {
+                int c_source = ( c + 2*cols - hf_size ) % cols;
+                for(int r = hf_size; r < rows + hf_size; r++) {
+                    int r_source = ( r + 2*rows - hf_size ) % rows;
+                    source(r, c) = in(r_source, c_source);
+                }
+            }
         } else {
             return BV_ERROR_PARAMETER;
         }
@@ -241,6 +268,19 @@ public:
                     } else if ( r_source >= rows) {
                         r_source = rows - 1;
                     }
+                    source(r, c) = in(r_source, c_source);
+                }
+            }
+         } else if ( mode == EXTENTION_ZERO) {
+            for (int c = 0; c < cols + hf_cols*2; c++) {
+                for(int r = 0; r < rows + hf_rows*2; r++) {
+                    source(r, c) = 0;
+                }
+            }
+            for (int c = hf_cols; c < cols + hf_cols; c++) {
+                int c_source = ( c + 2*cols - hf_cols ) % cols;
+                for(int r = hf_rows; r < rows + hf_rows; r++) {
+                    int r_source = ( r + 2*rows - hf_rows ) % rows;
                     source(r, c) = in(r_source, c_source);
                 }
             }

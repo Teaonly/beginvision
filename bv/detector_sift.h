@@ -24,7 +24,9 @@ public:
         sigmaNominal_ = 0.5;
         sigma0_ = 1.6; 
         dsigma_ = sqrt(powf(2, 2.0/S_) - 1); 
-        std::cout << "dsigma_ = " << dsigma_ << std::endl; 
+
+        peakThreshold_ = 0.026;
+        diffThreshold_ = 0.0001;
     }
     
 public:
@@ -32,6 +34,7 @@ public:
         
         // 0. normlized image
         Eigen::MatrixXd I = img;
+
         I = I - Eigen::MatrixXd::Ones(img.rows(), img.cols()) * I.minCoeff();
         I = I / I.maxCoeff();    
             
@@ -47,6 +50,7 @@ public:
         
         // 3. detect maxima and minima of difference-of-Gaussian in scale space
         doDetect();
+        refineDetect();
 
         return BV_OK;
     }
@@ -81,7 +85,7 @@ private:
             Eigen::MatrixXd temp = bottomLevel;
             std::cout << " bottom sigma = " << bottomSigma << std::endl;
             std::cout << " first  sigma = " << sigma << std::endl;
-            Filter::gaussianBlur(bottomLevel, temp, (int)(sigma*3+0.5)*2 + 1, sigma);
+            siftSmooth(bottomLevel, temp, sigma);
             bottomLevel = temp;
         }
 
@@ -100,7 +104,7 @@ private:
                 
                 double diffSigma = sigma0_ * dsigma_ * powf(2, (li-1)*1.0/S_);
                 std::cout << " sigma = " << diffSigma << std::endl;
-                Filter::gaussianBlur(lastLevel, temp, (int)(diffSigma*3+0.5)*2 + 1, diffSigma);
+                siftSmooth(lastLevel, temp, diffSigma);
                 octave.images_.push_back(temp);
                 
                 lastLevel = temp;
@@ -136,32 +140,37 @@ private:
                 for(int x = 1; x < octaves_[oi].width_ - 1; x++) {
                     for(int y = 1; y < octaves_[oi].height_ - 1; y++) {
                         double centerValue = octaves_[oi].dogs_[middle](x, y);
+
+                        if ( fabs(centerValue) < peakThreshold_ ) {
+                            continue;
+                        }
+
                         bool isMin = true;
                         bool isMax = true;
                         for(int xx = x-1; xx <= x+1; xx++) {
                             for(int yy = y-1; yy <= y+1; yy++) {
                                 if ( xx != x || yy != y) {
-                                    if ( octaves_[oi].dogs_[up](xx,yy) <= centerValue 
-                                         || octaves_[oi].dogs_[middle](xx,yy) <= centerValue 
-                                         || octaves_[oi].dogs_[down](xx,yy) <= centerValue ) {
-                                        isMax = false;    
+                                    if (    octaves_[oi].dogs_[up](xx,yy) - diffThreshold_ <= centerValue 
+                                         || octaves_[oi].dogs_[middle](xx,yy) - diffThreshold_ <= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) - diffThreshold_ <= centerValue ) {
+                                        isMin = false;    
                                     } 
 
-                                    if ( octaves_[oi].dogs_[up](xx,yy) >= centerValue 
-                                         || octaves_[oi].dogs_[middle](xx,yy) >= centerValue 
-                                         || octaves_[oi].dogs_[down](xx,yy) >= centerValue ) {
-                                        isMin = false;    
+                                    if (    octaves_[oi].dogs_[up](xx,yy) + diffThreshold_ >= centerValue 
+                                         || octaves_[oi].dogs_[middle](xx,yy) + diffThreshold_ >= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) + diffThreshold_ >= centerValue ) {
+                                        isMax = false;    
                                     } 
 
                                 } else {
-                                    if ( octaves_[oi].dogs_[up](xx,yy) <= centerValue 
-                                         || octaves_[oi].dogs_[down](xx,yy) <= centerValue ) {
-                                        isMax = false;    
+                                    if (    octaves_[oi].dogs_[up](xx,yy) - diffThreshold_ <= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) - diffThreshold_ <= centerValue ) {
+                                        isMin = false;    
                                     } 
 
-                                    if ( octaves_[oi].dogs_[up](xx,yy) >= centerValue 
-                                         || octaves_[oi].dogs_[down](xx,yy) >= centerValue ) {
-                                        isMin = false;    
+                                    if (    octaves_[oi].dogs_[up](xx,yy) + diffThreshold_ >= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) + diffThreshold_ >= centerValue ) {
+                                        isMax = false;    
                                     }                                            
                                 }
 
@@ -171,19 +180,30 @@ private:
                             }
                         }
 _detect_done:
-                        if ( isMin || isMax ) {
+                        if ( isMax || isMin) {
                             SiftKeyPoint oneKey;
                             oneKey.x_ = x;
                             oneKey.y_ = y;
                             oneKey.levelIndex_ = si;
                             oneKey.octaveIndex_ = oi;
-                            oneKey.scaleValue_ = sigma0_ * powf(2, oi + si/S_);
                             keyPoints_.push_back(oneKey);                            
                         }
                     }
                 }
             }
+            
+            std::cout << "Key points number is " << keyPoints_.size() << std::endl;
         }
+    }
+
+
+    void refineDetect() {
+    }
+
+    void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
+        //Eigen::MatrixXd ker = Kernel::gaussian((int)(sigma*2+0.5), sigma);   
+        //Filter::withTemplate(in, out, ker, Filter::EXTENTION_ZERO);
+        Filter::gaussianBlur(in, out, (int)(sigma*2+0.5)*2+1, sigma);
     }
 
 protected:
@@ -193,9 +213,9 @@ protected:
         unsigned int levelIndex_;
         unsigned int octaveIndex_;
 
+        // refined value;
         double xx_;
         double yy_;
-        double scaleValue_;
     } SiftKeyPoint;
 
     typedef struct {
@@ -216,6 +236,8 @@ protected:
     double sigmaNominal_;
     double sigma0_;
     double dsigma_;
+    double peakThreshold_;
+    double diffThreshold_;
 
     std::vector<SiftImageOctave> octaves_;
     std::vector<SiftKeyPoint> keyPoints_;
