@@ -137,8 +137,10 @@ private:
                 int middle = si;
                 int down = si-1;
 
-                for(int x = 1; x < octaves_[oi].width_ - 1; x++) {
-                    for(int y = 1; y < octaves_[oi].height_ - 1; y++) {
+                int boundary = (int)( sigma0_ * 4);
+
+                for(int x = boundary; x < octaves_[oi].width_ - boundary; x++) {
+                    for(int y = boundary; y < octaves_[oi].height_ - boundary; y++) {
                         double centerValue = octaves_[oi].dogs_[middle](x, y);
 
                         if ( fabs(centerValue) < peakThreshold_ ) {
@@ -198,6 +200,7 @@ _detect_done:
 
 
     void refineDetect() {
+    
     }
 
     void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
