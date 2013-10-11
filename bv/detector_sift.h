@@ -52,11 +52,15 @@ public:
         
         // 3. detect maxima and minima of difference-of-Gaussian in scale space
         doDetect();
-        refineDetect();
+        //refineDetect();
         
+        // 4. show detecing result , just for debug
+        I = img;
+        showDetect(I);
+          
         return BV_OK;
     }
-
+    
 private:
     /*
        The scale space is defined as:
@@ -185,12 +189,15 @@ private:
                         }
 _detect_done:
                         if ( isMax || isMin) {
-                            SiftKeyPoint oneKey;
-                            oneKey.x_ = x;
-                            oneKey.y_ = y;
-                            oneKey.levelIndex_ = si;
-                            oneKey.octaveIndex_ = oi;
-                            keyPoints_.push_back(oneKey);                            
+                            SiftKeyPoint newKey;
+                            newKey.x_ = x;
+                            newKey.y_ = y;
+                            newKey.levelIndex_ = si;
+                            newKey.octaveIndex_ = oi;
+                            newKey.xx_ = x;
+                            newKey.yy_ = y;
+                            newKey.ss_ = si;
+                            keyPoints_.push_back(newKey);                            
                         }
                     }
                 }
@@ -290,6 +297,30 @@ _detect_done:
         //Eigen::MatrixXd ker = Kernel::gaussian((int)(sigma*2+0.5), sigma);   
         //Filter::withTemplate(in, out, ker, Filter::EXTENTION_ZERO);
         Filter::gaussianBlur(in, out, (int)(sigma*2+0.5)*2+1, sigma);
+    }
+    
+    void showDetect(Eigen::MatrixXd& img) {
+        for (int i = 0; i < keyPoints_.size(); i++) {
+            if ( keyPoints_[i].octaveIndex_ >= 2) {
+                int centerx = (int)keyPoints_[i].xx_ * powf(2, keyPoints_[i].octaveIndex_ + minOctave_); 
+                int centery = (int)keyPoints_[i].yy_ * powf(2, keyPoints_[i].octaveIndex_ + minOctave_);
+                
+                double scale = powf(2, keyPoints_[i].octaveIndex_ + minOctave_) * sigma0_;
+                scale = scale * powf(2, keyPoints_[i].levelIndex_/S_); 
+
+                for ( double r = 0.0; r <= 2*pi ; r += pi/40) {
+                    int xx = (int)( sinf(r) * scale + centerx);
+                    int yy = (int)( cosf(r) * scale + centery);
+                    if (    xx >= 0 
+                         && xx < img.rows() 
+                         && yy >= 0
+                         && yy < img.cols() ) {
+                        img(xx,yy) = 1;
+                    }
+                }
+            }
+        }
+        Util::saveAsImage(img, "/tmp/xxx.bmp");
     }
 
 public:
