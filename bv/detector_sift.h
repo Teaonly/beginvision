@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <utility>
+#include <iterator>
 #include <Eigen/Core>
 #include <Eigen/LU> 
 #include <cmath>
@@ -25,8 +26,9 @@ public:
         sigma0_ = 1.6; 
         dsigma_ = sqrt(powf(2, 2.0/S_) - 1); 
 
-        peakThreshold_ = 0.026;
+        peakThreshold_ = 0.003;
         diffThreshold_ = 0.0001;
+        edgeThreshold_ = (10 + 1)*(10 + 1) / 10.0;
     }
     
 public:
@@ -51,7 +53,7 @@ public:
         // 3. detect maxima and minima of difference-of-Gaussian in scale space
         doDetect();
         refineDetect();
-
+        
         return BV_OK;
     }
 
@@ -90,8 +92,6 @@ private:
         }
 
         for(int oi = 0; oi < numOctaves_; oi++) {
-            int currentOctave = oi + minOctave_;
-        
             SiftImageOctave octave;
             octave.width_ = bottomLevel.rows();
             octave.height_ = bottomLevel.cols();
@@ -132,20 +132,22 @@ private:
         keyPoints_.clear();
 
         for(int oi = 0; oi < numOctaves_; oi++) {
-            for ( int si = 1; si < numLevels_ - 2; si++) {
+            for ( int si = 1; si < octaves_[oi].dogs_.size() - 1; si++) {
                 int up = si+1; 
                 int middle = si;
                 int down = si-1;
 
-                int boundary = (int)( sigma0_ * 4);
+                int boundary = (int)(sigma0_ * 6);
 
                 for(int x = boundary; x < octaves_[oi].width_ - boundary; x++) {
                     for(int y = boundary; y < octaves_[oi].height_ - boundary; y++) {
                         double centerValue = octaves_[oi].dogs_[middle](x, y);
-
+                        
+                        /*
                         if ( fabs(centerValue) < peakThreshold_ ) {
                             continue;
                         }
+                        */
 
                         bool isMin = true;
                         bool isMax = true;
@@ -193,14 +195,95 @@ _detect_done:
                     }
                 }
             }
-            
-            std::cout << "Key points number is " << keyPoints_.size() << std::endl;
         }
+    
+        std::cout << "Local Extream: Key points number is " << keyPoints_.size() << std::endl;
     }
 
-
+#define AT(o,x,y,s) octaves_[(o)].dogs_[(s)]((x),(y))     
     void refineDetect() {
-    
+        for ( std::vector<SiftKeyPoint>::iterator n = keyPoints_.begin(); n != keyPoints_.end();  ) {
+            // 3D quadratic refine the keypoint's location 
+            int o = (*n).octaveIndex_;
+            int x = (*n).x_;
+            int y = (*n).y_;
+            int s = (*n).levelIndex_;
+            
+            int dx, dy;
+            double Dx, Dy, Ds, Dxx, Dyy, Dss, Dxy, Dxs, Dys;
+            Eigen::MatrixXd A(3,3);
+            Eigen::MatrixXd b(1,3);
+            Eigen::MatrixXd c(1,3);
+            
+            for ( int i = 0; i < 3; i++) { 
+                Dx = 0.5 * ( AT(o, x+1, y,   s  ) - AT(o, x-1, y,   s  ) );
+                Dy = 0.5 * ( AT(o, x,   y+1, s  ) - AT(o, x,   y-1, s  ) );
+                Ds = 0.5 * ( AT(o, x,   y,   s+1) - AT(o, x,   y,   s-1) );
+                
+                Dxx =  AT(o, x+1, y,   s  ) + AT(o, x-1, y,   s  ) - 2*AT(o, x, y, s);
+                Dyy =  AT(o, x,   y+1, s  ) + AT(o, x,   y-1, s  ) - 2*AT(o, x, y, s);
+                Dss =  AT(o, x,   y,   s+1) + AT(o, x,   y,   s-1) - 2*AT(o, x, y, s);
+                
+                Dxy = 0.25 * (   AT(o, x+1, y+1, s  ) + AT(o, x-1, y-1, s  ) 
+                               - AT(o, x-1, y+1, s  ) - AT(o, x+1, y-1, s) ) ;            
+                Dxs = 0.25 * (   AT(o, x+1, y,   s+1) + AT(o, x-1, y,   s-1) 
+                               - AT(o, x+1, y,   s-1) - AT(o, x-1, y,   s+1) ) ;
+                Dys = 0.25 * (   AT(o, x,   y+1, s+1) + AT(o, x,   y-1, s-1) 
+                               - AT(o, x,   y+1, s-1) - AT(o, x,   y-1, s+1) ) ;
+
+                A(0,0) = Dxx;
+                A(1,1) = Dyy;
+                A(2,2) = Dss;
+                A(0,1) = A(1,0) = Dxy;
+                A(0,2) = A(2,0) = Dxs;
+                A(1,2) = A(2,1) = Dys;
+                b(0,0) = -1 * Dx;    
+                b(0,1) = -1 * Dy;
+                b(0,2) = -1 * Ds;
+
+                c = b * A.inverse();
+                
+                dx = dy = 0; 
+                if ( c(0,0) > 0.6) {
+                    dx = 1;
+                } else if ( c(0,0) < -0.6) {
+                    dx = -1;
+                }
+                if ( c(0,1) > 0.6) {
+                    dy = 1;
+                } else if ( c(0,1) < 0.6) {
+                    dy = -1;
+                }
+                
+                if ( dx == 0 && dy == 0) {
+                    break;
+                } else {       
+                    x += dx;
+                    y += dy;
+                }
+            }
+            
+            double score = (Dxx+Dyy)*(Dxx+Dyy) / (Dxx*Dyy - Dxy*Dxy) ; 
+            double refineValue = AT(o,x,y,s) + 0.5 * (Dx * c(0, 0) + Dy * c(0, 1) + Ds * c(0, 2)) ;   
+            
+            if (    (fabs(refineValue) > peakThreshold_) 
+                 && (score < edgeThreshold_)
+                 && (score > 0)
+                 && (fabs(c(0,0) ) < 1.5)
+                 && (fabs(c(0,1) ) < 1.5)
+                 && (fabs(c(0,2) ) < 1.5) ) {
+
+                (*n).xx_ = x + c(0,0);
+                (*n).yy_ = y + c(0,1);
+                (*n).ss_ = s + c(0,2);
+                
+                n++;
+            } else {
+                // throw it out
+                n = keyPoints_.erase(n);
+            }
+        }
+        std::cout << "After refine: Key points number is " << keyPoints_.size() << std::endl;
     }
 
     void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
@@ -209,7 +292,7 @@ _detect_done:
         Filter::gaussianBlur(in, out, (int)(sigma*2+0.5)*2+1, sigma);
     }
 
-protected:
+public:
     typedef struct {
         unsigned int x_;
         unsigned int y_;
@@ -219,6 +302,7 @@ protected:
         // refined value;
         double xx_;
         double yy_;
+        double ss_;
     } SiftKeyPoint;
 
     typedef struct {
@@ -241,6 +325,7 @@ protected:
     double dsigma_;
     double peakThreshold_;
     double diffThreshold_;
+    double edgeThreshold_;
 
     std::vector<SiftImageOctave> octaves_;
     std::vector<SiftKeyPoint> keyPoints_;
