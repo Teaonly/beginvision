@@ -52,7 +52,7 @@ public:
         
         // 3. detect maxima and minima of difference-of-Gaussian in scale space
         doDetect();
-        //refineDetect();
+        refineDetect();
         
         // 4. show detecing result , just for debug
         I = img;
@@ -91,6 +91,7 @@ private:
             Eigen::MatrixXd temp = bottomLevel;
             std::cout << " bottom sigma = " << bottomSigma << std::endl;
             std::cout << " first  sigma = " << sigma << std::endl;
+            
             siftSmooth(bottomLevel, temp, sigma);
             bottomLevel = temp;
         }
@@ -296,17 +297,19 @@ _detect_done:
     void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
         //Eigen::MatrixXd ker = Kernel::gaussian((int)(sigma*2+0.5), sigma);   
         //Filter::withTemplate(in, out, ker, Filter::EXTENTION_ZERO);
-        Filter::gaussianBlur(in, out, (int)(sigma*2+0.5)*2+1, sigma);
+        int kerWidth = (int)(sigma*4);
+        kerWidth = Util::max( kerWidth, 1); 
+        Filter::gaussianBlur(in, out, kerWidth*2+1, sigma);
     }
     
     void showDetect(Eigen::MatrixXd& img) {
         for (int i = 0; i < keyPoints_.size(); i++) {
-            if ( keyPoints_[i].octaveIndex_ >= 2) {
+            if ( keyPoints_[i].octaveIndex_ >= 1) {
                 int centerx = (int)keyPoints_[i].xx_ * powf(2, keyPoints_[i].octaveIndex_ + minOctave_); 
                 int centery = (int)keyPoints_[i].yy_ * powf(2, keyPoints_[i].octaveIndex_ + minOctave_);
                 
                 double scale = powf(2, keyPoints_[i].octaveIndex_ + minOctave_) * sigma0_;
-                scale = scale * powf(2, keyPoints_[i].levelIndex_/S_); 
+                scale = scale * powf(2, keyPoints_[i].ss_/S_); 
 
                 for ( double r = 0.0; r <= 2*pi ; r += pi/40) {
                     int xx = (int)( sinf(r) * scale + centerx);
