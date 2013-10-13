@@ -8,8 +8,15 @@ namespace bv {
 namespace Util {
 
 template<typename T> 
-T min(T& v1, T& v2) {
+T min(const T& v1,const T& v2) {
     if ( v1 < v2)
+        return v1;
+    return v2;
+}
+
+template<typename T> 
+T max(const T& v1, const T& v2) {
+    if ( v1 > v2)
         return v1;
     return v2;
 }

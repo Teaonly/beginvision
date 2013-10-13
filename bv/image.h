@@ -26,7 +26,7 @@ public:
     }
 
     Eigen::MatrixXi data;
-    const int scale; 
+    int scale; 
 };
 
 template<int ColorNumber>
