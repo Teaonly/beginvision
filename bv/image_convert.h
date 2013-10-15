@@ -67,7 +67,7 @@ public:
         return BV_OK;
     }
 
-    static int resizeImage(Eigen::MatrixXd& in, Eigen::MatrixXd& out, INTERPOLATE_MODE mode=INTERPOLATE_BILINEAR) {
+    static int resizeImage(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double smallShift = 0.0, INTERPOLATE_MODE mode=INTERPOLATE_BILINEAR) {
         if ( mode != INTERPOLATE_BILINEAR) {
             return BV_ERROR_PARAMETER;
         }
@@ -78,8 +78,8 @@ public:
         for (int y = 0; y < out.cols(); y++) {
             for ( int x = 0; x < out.rows(); x++) {
                 
-                double xx = scaleX * x * 1.0 + 0.01;
-                double yy = scaleY * y * 1.0 + 0.01;
+                double xx = scaleX * x * 1.0 + smallShift;
+                double yy = scaleY * y * 1.0 + smallShift;
  
                 int leftX = (int) (xx);
                 int rightX = (int) (xx + 1);

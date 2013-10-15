@@ -82,21 +82,20 @@ private:
         Eigen::MatrixXd bottomLevel = I;
         double bottomSigma = sigma0_ * powf(2, minOctave_);
         octaves_.clear();
-
+        
         if ( bottomSigma > sigmaNominal_ * powf(2, minOctave_)) {
             double sa = bottomSigma;
             double sb = sigmaNominal_ * powf(2, minOctave_); 
             double sigma = sqrt( sa*sa - sb*sb);
             
             Eigen::MatrixXd temp = bottomLevel;
-            std::cout << " bottom sigma = " << bottomSigma << std::endl;
-            std::cout << " first  sigma = " << sigma << std::endl;
             
             siftSmooth(bottomLevel, temp, sigma);
             bottomLevel = temp;
         }
 
         for(int oi = 0; oi < numOctaves_; oi++) {
+            
             SiftImageOctave octave;
             octave.width_ = bottomLevel.rows();
             octave.height_ = bottomLevel.cols();
@@ -108,7 +107,6 @@ private:
                 Eigen::MatrixXd temp = lastLevel;
                 
                 double diffSigma = sigma0_ * dsigma_ * powf(2, (li-1)*1.0/S_);
-                std::cout << " sigma = " << diffSigma << std::endl;
                 siftSmooth(lastLevel, temp, diffSigma);
                 octave.images_.push_back(temp);
                 
@@ -117,7 +115,7 @@ private:
             if ( oi != (numOctaves_ - 1) ) {
                 // prepare for next octave
                 bottomLevel.resize( bottomLevel.rows()/2, bottomLevel.cols()/2);
-                // TODO using downsample replacing resize.
+                
                 Convert::resizeImage( octave.images_[S_], bottomLevel);
             }
             octaves_.push_back(octave);
@@ -301,7 +299,7 @@ _detect_done:
         kerWidth = Util::max( kerWidth, 1); 
         Filter::gaussianBlur(in, out, kerWidth*2+1, sigma);
     }
-    
+
     void showDetect(Eigen::MatrixXd& img) {
         for (int i = 0; i < keyPoints_.size(); i++) {
             if ( keyPoints_[i].octaveIndex_ >= 1) {
@@ -326,7 +324,7 @@ _detect_done:
         Util::saveAsImage(img, "/tmp/xxx.bmp");
     }
 
-public:
+private:
     typedef struct {
         unsigned int x_;
         unsigned int y_;
