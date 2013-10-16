@@ -27,7 +27,7 @@ public:
         dsigma_ = sqrt(powf(2, 2.0/S_) - 1); 
 
         peakThreshold_ = 0.003;
-        diffThreshold_ = 0.0001;
+        diffThreshold_ = 0.0000;
         edgeThreshold_ = (10 + 1)*(10 + 1) / 10.0;
     }
     
@@ -94,6 +94,7 @@ private:
             bottomLevel = temp;
         }
 
+
         for(int oi = 0; oi < numOctaves_; oi++) {
             
             SiftImageOctave octave;
@@ -140,8 +141,9 @@ private:
                 int middle = si;
                 int down = si-1;
 
-                int boundary = (int)(sigma0_ * 6);
-
+                //int boundary = (int)(sigma0_*4.0) * si;
+                int boundary = 1;
+    
                 for(int x = boundary; x < octaves_[oi].width_ - boundary; x++) {
                     for(int y = boundary; y < octaves_[oi].height_ - boundary; y++) {
                         double centerValue = octaves_[oi].dogs_[middle](x, y);
@@ -201,9 +203,9 @@ _detect_done:
                     }
                 }
             }
+            std::cout << "Local Extream(" << oi << "): Key points number is " << keyPoints_.size() << std::endl;
         }
     
-        std::cout << "Local Extream: Key points number is " << keyPoints_.size() << std::endl;
     }
 
 #define AT(o,x,y,s) octaves_[(o)].dogs_[(s)]((x),(y))     
@@ -221,6 +223,7 @@ _detect_done:
             Eigen::MatrixXd b(1,3);
             Eigen::MatrixXd c(1,3);
             
+            bool outSide = false; 
             for ( int i = 0; i < 3; i++) { 
                 Dx = 0.5 * ( AT(o, x+1, y,   s  ) - AT(o, x-1, y,   s  ) );
                 Dy = 0.5 * ( AT(o, x,   y+1, s  ) - AT(o, x,   y-1, s  ) );
@@ -266,9 +269,19 @@ _detect_done:
                 } else {       
                     x += dx;
                     y += dy;
+                    if (    x <=1 || x >= octaves_[o].width_ - 2
+                         || y <=1 || y >= octaves_[o].height_ -2 ) {
+                        outSide = true;
+                        break;
+                    }
                 }
             }
             
+            if ( outSide ) {
+                n = keyPoints_.erase(n);
+                continue;
+            }
+             
             double score = (Dxx+Dyy)*(Dxx+Dyy) / (Dxx*Dyy - Dxy*Dxy) ; 
             double refineValue = AT(o,x,y,s) + 0.5 * (Dx * c(0, 0) + Dy * c(0, 1) + Ds * c(0, 2)) ;   
             
@@ -293,11 +306,12 @@ _detect_done:
     }
 
     void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
-        //Eigen::MatrixXd ker = Kernel::gaussian((int)(sigma*2+0.5), sigma);   
-        //Filter::withTemplate(in, out, ker, Filter::EXTENTION_ZERO);
-        int kerWidth = (int)(sigma*4);
+        int kerWidth = ceil(sigma*4.0);
         kerWidth = Util::max( kerWidth, 1); 
-        Filter::gaussianBlur(in, out, kerWidth*2+1, sigma);
+        
+        //Eigen::MatrixXd ker = Kernel::gaussian(kerWidth, sigma);   
+        //Filter::withTemplate(in, out, ker, Filter::EXTENTION_ZERO);
+        Filter::gaussianBlur(in, out, kerWidth*2+1, sigma, Filter::EXTENTION_ZERO);
     }
 
     void showDetect(Eigen::MatrixXd& img) {
