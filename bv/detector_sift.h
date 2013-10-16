@@ -17,7 +17,7 @@ namespace bv {
 
 class DT_Sift {
 public:
-    DT_Sift(int numOctaves = 4, int S = 3, int minOctave = 0): 
+    DT_Sift(int numOctaves = 5, int S = 3, int minOctave = 0): 
             numOctaves_(numOctaves), minOctave_(minOctave), S_(S) { 
         
         numLevels_ = S_ + 3;
@@ -27,7 +27,6 @@ public:
         dsigma_ = sqrt(powf(2, 2.0/S_) - 1); 
 
         peakThreshold_ = 0.003;
-        diffThreshold_ = 0.0000;
         edgeThreshold_ = (10 + 1)*(10 + 1) / 10.0;
     }
     
@@ -148,8 +147,8 @@ private:
                     for(int y = boundary; y < octaves_[oi].height_ - boundary; y++) {
                         double centerValue = octaves_[oi].dogs_[middle](x, y);
                         
-                        /*
-                        if ( fabs(centerValue) < peakThreshold_ ) {
+                        /* 
+                        if ( fabs(centerValue) < 0.8 * peakThreshold_ ) {
                             continue;
                         }
                         */
@@ -159,26 +158,26 @@ private:
                         for(int xx = x-1; xx <= x+1; xx++) {
                             for(int yy = y-1; yy <= y+1; yy++) {
                                 if ( xx != x || yy != y) {
-                                    if (    octaves_[oi].dogs_[up](xx,yy) - diffThreshold_ <= centerValue 
-                                         || octaves_[oi].dogs_[middle](xx,yy) - diffThreshold_ <= centerValue 
-                                         || octaves_[oi].dogs_[down](xx,yy) - diffThreshold_ <= centerValue ) {
+                                    if (    octaves_[oi].dogs_[up](xx,yy) <= centerValue 
+                                         || octaves_[oi].dogs_[middle](xx,yy) <= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) <= centerValue ) {
                                         isMin = false;    
                                     } 
 
-                                    if (    octaves_[oi].dogs_[up](xx,yy) + diffThreshold_ >= centerValue 
-                                         || octaves_[oi].dogs_[middle](xx,yy) + diffThreshold_ >= centerValue 
-                                         || octaves_[oi].dogs_[down](xx,yy) + diffThreshold_ >= centerValue ) {
+                                    if (    octaves_[oi].dogs_[up](xx,yy) >= centerValue 
+                                         || octaves_[oi].dogs_[middle](xx,yy) >= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) >= centerValue ) {
                                         isMax = false;    
                                     } 
 
                                 } else {
-                                    if (    octaves_[oi].dogs_[up](xx,yy) - diffThreshold_ <= centerValue 
-                                         || octaves_[oi].dogs_[down](xx,yy) - diffThreshold_ <= centerValue ) {
+                                    if (    octaves_[oi].dogs_[up](xx,yy) <= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) <= centerValue ) {
                                         isMin = false;    
                                     } 
 
-                                    if (    octaves_[oi].dogs_[up](xx,yy) + diffThreshold_ >= centerValue 
-                                         || octaves_[oi].dogs_[down](xx,yy) + diffThreshold_ >= centerValue ) {
+                                    if (    octaves_[oi].dogs_[up](xx,yy) >= centerValue 
+                                         || octaves_[oi].dogs_[down](xx,yy) >= centerValue ) {
                                         isMax = false;    
                                     }                                            
                                 }
@@ -224,7 +223,7 @@ _detect_done:
             Eigen::MatrixXd c(1,3);
             
             bool outSide = false; 
-            for ( int i = 0; i < 3; i++) { 
+            for ( int i = 0; i < 5; i++) { 
                 Dx = 0.5 * ( AT(o, x+1, y,   s  ) - AT(o, x-1, y,   s  ) );
                 Dy = 0.5 * ( AT(o, x,   y+1, s  ) - AT(o, x,   y-1, s  ) );
                 Ds = 0.5 * ( AT(o, x,   y,   s+1) - AT(o, x,   y,   s-1) );
@@ -301,7 +300,9 @@ _detect_done:
                 // throw it out
                 n = keyPoints_.erase(n);
             }
+        
         }
+    
         std::cout << "After refine: Key points number is " << keyPoints_.size() << std::endl;
     }
 
@@ -370,7 +371,6 @@ private:
     double sigma0_;
     double dsigma_;
     double peakThreshold_;
-    double diffThreshold_;
     double edgeThreshold_;
 
     std::vector<SiftImageOctave> octaves_;
