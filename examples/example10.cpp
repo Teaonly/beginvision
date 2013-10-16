@@ -19,8 +19,9 @@ int main(int argc, char *argv[]) {
     Eigen::MatrixXd g1(i1.width(), i1.height());
 
     bv::Convert::colorImageToGrayImage(c1, i1);
+    //i1 = c1.color(1);
     bv::Convert::grayImageToMatrix( i1, g1);
-    
+
     bv::DT_Sift detector;
     detector.run(g1);
         

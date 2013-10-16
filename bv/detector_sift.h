@@ -17,7 +17,7 @@ namespace bv {
 
 class DT_Sift {
 public:
-    DT_Sift(int numOctaves = 4, int S = 3, int minOctave = 0): 
+    DT_Sift(int numOctaves = 5, int S = 3, int minOctave = 0): 
             numOctaves_(numOctaves), minOctave_(minOctave), S_(S) { 
         
         numLevels_ = S_ + 3;
