@@ -66,20 +66,18 @@ public:
 
         // Create 1D filter
         std::vector<double> gaussian1D;
+        double tplSum = 0;
         for(int i = -1*hf_size; i <= hf_size; i++) {
             double v = exp(-1*i*i/(2*sigma*sigma));
             gaussian1D.push_back(v);
+            tplSum = tplSum + v;
         } 
         
         // Compute the template sum 
-        double tplSum = 0;
         for(int i = 0; i < size; i++) {
-            for(int j = 0; j < size; j++) {
-                tplSum = tplSum + gaussian1D[i]*gaussian1D[j]; 
-            }
+            gaussian1D[i] = gaussian1D[i] / tplSum;
         }
 
-        
         int cols = in.cols();
         int rows = in.rows();
         
@@ -145,7 +143,7 @@ public:
                 for ( int ci = -1 * hf_size; ci <= hf_size; ci++) {
                     sum = sum + gaussian1D[ci + hf_size] * source2(r + ext_size, c + ci + ext_size);
                 }
-                out(r, c) = sum / tplSum;
+                out(r, c) = sum;
             }
         }
 
