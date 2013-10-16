@@ -17,7 +17,7 @@ namespace bv {
 
 class DT_Sift {
 public:
-    DT_Sift(int numOctaves = 5, int S = 3, int minOctave = 0): 
+    DT_Sift(int numOctaves = 4, int S = 3, int minOctave = 0): 
             numOctaves_(numOctaves), minOctave_(minOctave), S_(S) { 
         
         numLevels_ = S_ + 3;
@@ -51,7 +51,7 @@ public:
         
         // 3. detect maxima and minima of difference-of-Gaussian in scale space
         doDetect();
-        refineDetect();
+        doRefine();
         
         // 4. show detecing result , just for debug
         I = img;
@@ -143,15 +143,13 @@ private:
                 //int boundary = (int)(sigma0_*4.0) * si;
                 int boundary = 1;
     
-                for(int x = boundary; x < octaves_[oi].width_ - boundary; x++) {
-                    for(int y = boundary; y < octaves_[oi].height_ - boundary; y++) {
+                for(int y = boundary; y < octaves_[oi].height_ - boundary; y++) {
+                    for(int x = boundary; x < octaves_[oi].width_ - boundary; x++) {
                         double centerValue = octaves_[oi].dogs_[middle](x, y);
                         
-                        /* 
                         if ( fabs(centerValue) < 0.8 * peakThreshold_ ) {
                             continue;
                         }
-                        */
 
                         bool isMin = true;
                         bool isMax = true;
@@ -204,25 +202,23 @@ _detect_done:
             }
             std::cout << "Local Extream(" << oi << "): Key points number is " << keyPoints_.size() << std::endl;
         }
-    
     }
 
 #define AT(o,x,y,s) octaves_[(o)].dogs_[(s)]((x),(y))     
-    void refineDetect() {
+    void doRefine() {
         for ( std::vector<SiftKeyPoint>::iterator n = keyPoints_.begin(); n != keyPoints_.end();  ) {
             // 3D quadratic refine the keypoint's location 
             int o = (*n).octaveIndex_;
             int x = (*n).x_;
             int y = (*n).y_;
             int s = (*n).levelIndex_;
-            
+
             int dx, dy;
             double Dx, Dy, Ds, Dxx, Dyy, Dss, Dxy, Dxs, Dys;
             Eigen::MatrixXd A(3,3);
             Eigen::MatrixXd b(1,3);
             Eigen::MatrixXd c(1,3);
             
-            bool outSide = false; 
             for ( int i = 0; i < 5; i++) { 
                 Dx = 0.5 * ( AT(o, x+1, y,   s  ) - AT(o, x-1, y,   s  ) );
                 Dy = 0.5 * ( AT(o, x,   y+1, s  ) - AT(o, x,   y-1, s  ) );
@@ -248,18 +244,24 @@ _detect_done:
                 b(0,0) = -1 * Dx;    
                 b(0,1) = -1 * Dy;
                 b(0,2) = -1 * Ds;
-
-                c = b * A.inverse();
                 
+                if ( fabs(A.determinant()) > 0) {
+                    c = b * A.inverse(); 
+                } else {
+                    c(0,0) = 0;
+                    c(0,1) = 0;
+                    c(0,2) = 0;
+                }
+
                 dx = dy = 0; 
-                if ( c(0,0) > 0.6) {
+                if ( c(0,0) > 0.6 && x < octaves_[o].width_ - 2) {
                     dx = 1;
-                } else if ( c(0,0) < -0.6) {
+                } else if ( c(0,0) < -0.6 && x > 1) {
                     dx = -1;
                 }
-                if ( c(0,1) > 0.6) {
+                if ( c(0,1) > 0.6 && y < octaves_[o].height_ - 2) {
                     dy = 1;
-                } else if ( c(0,1) < 0.6) {
+                } else if ( c(0,1) < -0.6 && y > 1) {
                     dy = -1;
                 }
                 
@@ -268,41 +270,37 @@ _detect_done:
                 } else {       
                     x += dx;
                     y += dy;
-                    if (    x <=1 || x >= octaves_[o].width_ - 2
-                         || y <=1 || y >= octaves_[o].height_ -2 ) {
-                        outSide = true;
-                        break;
-                    }
                 }
             }
             
-            if ( outSide ) {
-                n = keyPoints_.erase(n);
-                continue;
-            }
-             
             double score = (Dxx+Dyy)*(Dxx+Dyy) / (Dxx*Dyy - Dxy*Dxy) ; 
             double refineValue = AT(o,x,y,s) + 0.5 * (Dx * c(0, 0) + Dy * c(0, 1) + Ds * c(0, 2)) ;   
             
+            double xx = x + c(0,0);
+            double yy = y + c(0,1);
+            double ss = s + c(0,2);            
             if (    (fabs(refineValue) > peakThreshold_) 
                  && (score < edgeThreshold_)
-                 && (score > 0)
+                 && (score >= 0)
                  && (fabs(c(0,0) ) < 1.5)
                  && (fabs(c(0,1) ) < 1.5)
-                 && (fabs(c(0,2) ) < 1.5) ) {
+                 && (fabs(c(0,2) ) < 1.5) 
+                 && (xx > 0)
+                 && (xx < octaves_[o].width_-1)
+                 && (yy > 0)
+                 && (yy < octaves_[o].height_-1) 
+                 && (ss >= 0) 
+                 && (ss < numLevels_ )  ) {
 
-                (*n).xx_ = x + c(0,0);
-                (*n).yy_ = y + c(0,1);
-                (*n).ss_ = s + c(0,2);
-                
+                (*n).xx_ = xx;
+                (*n).yy_ = yy;
+                (*n).ss_ = ss;
                 n++;
             } else {
                 // throw it out
                 n = keyPoints_.erase(n);
             }
-        
         }
-    
         std::cout << "After refine: Key points number is " << keyPoints_.size() << std::endl;
     }
 
