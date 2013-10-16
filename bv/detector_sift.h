@@ -321,6 +321,7 @@ _detect_done:
                 
                 double scale = powf(2, keyPoints_[i].octaveIndex_ + minOctave_) * sigma0_;
                 scale = scale * powf(2, keyPoints_[i].ss_/S_); 
+                scale = scale * 1.5;
 
                 for ( double r = 0.0; r <= 2*pi ; r += pi/40) {
                     int xx = (int)( sinf(r) * scale + centerx);
