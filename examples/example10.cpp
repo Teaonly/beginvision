@@ -5,6 +5,7 @@
 #include <bv/image_convert.h>
 #include <bv/filter.h>
 #include <bv/detector_sift.h>
+#include <bv/descriptor_sift.h>
 
 int main(int argc, char *argv[]) {
     if ( argc < 2) {

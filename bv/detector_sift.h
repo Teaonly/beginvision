@@ -373,6 +373,7 @@ private:
 
     std::vector<SiftImageOctave> octaves_;
     std::vector<SiftKeyPoint> keyPoints_;
+    friend class DS_Sift;
 };
 
 }
