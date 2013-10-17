@@ -29,6 +29,7 @@ public:
         peakThreshold_ = 0.003;
         edgeThreshold_ = (10 + 1)*(10 + 1) / 10.0;
         winFactor_ = 1.5;
+        orientHistNumber_ = 8;
     }
     
 public:
@@ -333,6 +334,7 @@ _detect_done:
     }   
 
     void getOrientation() {
+        std::vector<SiftKeyPoint> newPoints;
         for ( std::vector<SiftKeyPoint>::iterator n = keyPoints_.begin(); n != keyPoints_.end(); n++ ) {
             int cx = floor( (*n).xx_ + 0.5);
             int cy = floor( (*n).yy_ + 0.5);
@@ -350,13 +352,13 @@ _detect_done:
             int windowSize = floor( 3.0 * weightSigma ); 
             
             // caculating the histogram of grad's angle 
-            const int BINS = 8;  
-            Eigen::ArrayXd  hist(BINS);
+            const int orientHistNumber_ = 8;  
+            Eigen::ArrayXd  hist(orientHistNumber_);
             int leftX = Util::max(cx-windowSize, 0);
             int rightX = Util::min(cx+windowSize, width-1); 
             int topY = Util::max(cy-windowSize, 0);
             int bottomY = Util::min(cy+windowSize, height-1);
-            for(int i = 0; i < BINS; i++) {
+            for(int i = 0; i < orientHistNumber_; i++) {
                 hist(i) = 0.0;
             }
             for (int x = leftX; x <= rightX; x++) {
@@ -369,9 +371,9 @@ _detect_done:
                     if ( angle < 0) {
                         angle = angle + 2*PI;
                     }
-                    int abin = floor( 1.0*BINS*angle/(2*PI) + 0.5);
-                    if ( abin >= BINS) {
-                        abin = BINS - 1;
+                    int abin = floor( 1.0*orientHistNumber_*angle/(2*PI) + 0.5);
+                    if ( abin >= orientHistNumber_) {
+                        abin = orientHistNumber_ - 1;
                     }
                     double weight = exp( -1 * ((x-cx)*(x-cx) + (y-cy)*(y-cy)) / (2*weightSigma*weightSigma) );
                     hist(abin) = hist(abin) + weight * mag;
@@ -379,8 +381,19 @@ _detect_done:
             }
             
             // find the maxvalue 
-
+            int maxIndex1, maxIndex2;
+            double maxV1 = hist.maxCoeff(&maxIndex1);
+            hist[maxIndex1] = 0.0;
+            double maxV2 = hist.maxCoeff(&maxIndex2);
+            
+            (*n).angle_ = maxIndex1*2.0*PI/orientHistNumber_;
+            if ( maxV2 > 0.8 * maxV1 ) {
+                SiftKeyPoint np = *n;
+                np.angle_ = maxIndex2*2.0*PI/orientHistNumber_;    
+                newPoints.push_back(np);
+            } 
         }
+        keyPoints_.insert(keyPoints_.end(), newPoints.begin(), newPoints.end());
     }
 
     void showDetect(Eigen::MatrixXd& img) {
@@ -391,11 +404,22 @@ _detect_done:
                 
                 double scale = powf(2, keyPoints_[i].octaveIndex_ + minOctave_) * sigma0_;
                 scale = scale * powf(2, keyPoints_[i].ss_/S_); 
-                scale = scale * 3;
+                //scale = scale * 2;
 
                 for ( double r = 0.0; r <= 2*PI ; r += PI/40) {
                     int xx = (int)( sinf(r) * scale + centerx);
                     int yy = (int)( cosf(r) * scale + centery);
+                    if (    xx >= 0 
+                         && xx < img.rows() 
+                         && yy >= 0
+                         && yy < img.cols() ) {
+                        img(xx,yy) = 1;
+                    }
+                }
+                double angle_ = keyPoints_[i].angle_;
+                for (int d = 0; d < scale; d++) {
+                    int xx = (int)( sinf(angle_) * d + centerx);
+                    int yy = (int)( cosf(angle_) * d + centery);
                     if (    xx >= 0 
                          && xx < img.rows() 
                          && yy >= 0
@@ -455,6 +479,7 @@ private:
     double peakThreshold_;
     double edgeThreshold_;
     double winFactor_;
+    int orientHistNumber_;    
 
     std::vector<SiftImageOctave> octaves_;
     std::vector<SiftKeyPoint> keyPoints_;
