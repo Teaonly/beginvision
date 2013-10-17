@@ -18,7 +18,7 @@ public:
             for  (int j = 0; j < hfSize*2+1; j++) {
                 double x = j - hfSize;
                 double y = i - hfSize;
-                ker(j, i) = exp(-1*(x*x+y*y)/(2*sigma*sigma)) / (2*pi*sigma*sigma);
+                ker(j, i) = exp(-1*(x*x+y*y)/(2*sigma*sigma)) / (2*PI*sigma*sigma);
                 sum = sum + ker(j, i);
             }
         }
@@ -33,7 +33,7 @@ public:
                 double x = j - hfSize;
                 double y = i - hfSize;
             
-                ker(j, i) = exp(-1*(x*x+y*y)/(2*sigma*sigma)) / (pi*sigma*sigma*sigma*sigma) ;
+                ker(j, i) = exp(-1*(x*x+y*y)/(2*sigma*sigma)) / (PI*sigma*sigma*sigma*sigma) ;
                 ker(j, i) = ker(j, i) * ((x*x+y*y)/(2*sigma*sigma) - 1);
             }
         }
@@ -150,7 +150,7 @@ public:
         return BV_OK;
     }
 
-    static int average(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, EXTENTION_MODE mode = EXTENTION_NEAR) { 
+    static int average(Eigen::MatrixXd& in, Eigen::MatrixXd& out, int size, EXTENTION_MODE mode = EXTENTION_ZERO) { 
         // Change size to a odd value
         if ( size%2 == 0 ) {
             return BV_ERROR_PARAMETER;
@@ -226,7 +226,7 @@ public:
 
 
     static int withTemplate(Eigen::MatrixXd& in, Eigen::MatrixXd& out, 
-                       Eigen::MatrixXd& t, EXTENTION_MODE mode = EXTENTION_NEAR) { 
+                       Eigen::MatrixXd& t, EXTENTION_MODE mode = EXTENTION_ZERO) { 
         if ( t.rows()%2 == 0 || t.cols()%2 == 0 ) {
             return BV_ERROR_PARAMETER;
         }

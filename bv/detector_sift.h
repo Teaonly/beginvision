@@ -28,6 +28,7 @@ public:
 
         peakThreshold_ = 0.003;
         edgeThreshold_ = (10 + 1)*(10 + 1) / 10.0;
+        winFactor_ = 1.5;
     }
     
 public:
@@ -53,7 +54,11 @@ public:
         doDetect();
         doRefine();
         
-        // 4. show detecing result , just for debug
+        // 4. Caculating the orientation 
+        buildGrad();
+        getOrientation();
+
+        // 5. show detecing result , just for debug
         I = img;
         showDetect(I);
           
@@ -303,14 +308,79 @@ _detect_done:
         }
         std::cout << "After refine: Key points number is " << keyPoints_.size() << std::endl;
     }
+    
+    void buildGrad() {
+        Eigen::MatrixXd hx(3,1);
+        hx(0,0) = -0.5;
+        hx(1,0) = 0.0;
+        hx(2,0) = 0.5;
+        Eigen::MatrixXd hy = hx.transpose();
+        for(int oi = 0; oi < numOctaves_; oi++) {
+            for ( int li = 0; li < numLevels_; li++) {
+                int wid = octaves_[oi].images_[li].rows();
+                int hei = octaves_[oi].images_[li].cols();
 
-    void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
-        int kerWidth = ceil(sigma*4.0);
-        kerWidth = Util::max( kerWidth, 1); 
-        
-        //Eigen::MatrixXd ker = Kernel::gaussian(kerWidth, sigma);   
-        //Filter::withTemplate(in, out, ker, Filter::EXTENTION_ZERO);
-        Filter::gaussianBlur(in, out, kerWidth*2+1, sigma, Filter::EXTENTION_ZERO);
+                Eigen::MatrixXd gradX(wid, hei);
+                Eigen::MatrixXd gradY(wid, hei);
+
+                Filter::withTemplate(octaves_[oi].images_[li], gradX, hx);
+                Filter::withTemplate(octaves_[oi].images_[li], gradY, hy);
+                
+                octaves_[oi].gradsX_.push_back(gradX);
+                octaves_[oi].gradsY_.push_back(gradY);   
+            }
+        }
+    }   
+
+    void getOrientation() {
+        for ( std::vector<SiftKeyPoint>::iterator n = keyPoints_.begin(); n != keyPoints_.end(); n++ ) {
+            int cx = floor( (*n).xx_ + 0.5);
+            int cy = floor( (*n).yy_ + 0.5);
+            double s = (*n).ss_;
+            int oi = (*n).octaveIndex_;
+            
+            int si = floor( (*n).ss_ + 0.5);
+            if ( si > numLevels_ - 1) {
+                si = numLevels_ - 1;
+            }
+            int width = octaves_[oi].images_[si].rows();
+            int height = octaves_[oi].images_[si].cols();
+
+            double weightSigma = winFactor_ * sigma0_ * powf(2, s/S_ );
+            int windowSize = floor( 3.0 * weightSigma ); 
+            
+            // caculating the histogram of grad's angle 
+            const int BINS = 8;  
+            Eigen::ArrayXd  hist(BINS);
+            int leftX = Util::max(cx-windowSize, 0);
+            int rightX = Util::min(cx+windowSize, width-1); 
+            int topY = Util::max(cy-windowSize, 0);
+            int bottomY = Util::min(cy+windowSize, height-1);
+            for(int i = 0; i < BINS; i++) {
+                hist(i) = 0.0;
+            }
+            for (int x = leftX; x <= rightX; x++) {
+                for ( int y = topY; y <= bottomY; y++) {
+                    double mag =   octaves_[oi].gradsX_[si](x,y) * octaves_[oi].gradsX_[si](x,y) 
+                                 + octaves_[oi].gradsY_[si](x,y) * octaves_[oi].gradsY_[si](x,y);
+                    mag = sqrt(mag);
+                    double angle = atan2( octaves_[oi].gradsY_[si](x,y), octaves_[oi].gradsX_[si](x,y) );
+                    
+                    if ( angle < 0) {
+                        angle = angle + 2*PI;
+                    }
+                    int abin = floor( 1.0*BINS*angle/(2*PI) + 0.5);
+                    if ( abin >= BINS) {
+                        abin = BINS - 1;
+                    }
+                    double weight = exp( -1 * ((x-cx)*(x-cx) + (y-cy)*(y-cy)) / (2*weightSigma*weightSigma) );
+                    hist(abin) = hist(abin) + weight * mag;
+                }
+            }
+            
+            // find the maxvalue 
+
+        }
     }
 
     void showDetect(Eigen::MatrixXd& img) {
@@ -321,9 +391,9 @@ _detect_done:
                 
                 double scale = powf(2, keyPoints_[i].octaveIndex_ + minOctave_) * sigma0_;
                 scale = scale * powf(2, keyPoints_[i].ss_/S_); 
-                scale = scale * 1.5;
+                scale = scale * 3;
 
-                for ( double r = 0.0; r <= 2*pi ; r += pi/40) {
+                for ( double r = 0.0; r <= 2*PI ; r += PI/40) {
                     int xx = (int)( sinf(r) * scale + centerx);
                     int yy = (int)( cosf(r) * scale + centery);
                     if (    xx >= 0 
@@ -338,6 +408,16 @@ _detect_done:
         Util::saveAsImage(img, "/tmp/xxx.bmp");
     }
 
+    void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
+        int kerWidth = ceil(sigma*4.0);
+        kerWidth = Util::max( kerWidth, 1); 
+        
+        //Eigen::MatrixXd ker = Kernel::gaussian(kerWidth, sigma);   
+        //Filter::withTemplate(in, out, ker, Filter::EXTENTION_ZERO);
+        Filter::gaussianBlur(in, out, kerWidth*2+1, sigma, Filter::EXTENTION_ZERO);
+    }
+
+
 private:
     typedef struct {
         unsigned int x_;
@@ -349,6 +429,7 @@ private:
         double xx_;
         double yy_;
         double ss_;
+        double angle_;
     } SiftKeyPoint;
 
     typedef struct {
@@ -356,6 +437,8 @@ private:
         unsigned int height_;
         std::vector<Eigen::MatrixXd> images_;
         std::vector<Eigen::MatrixXd> dogs_;
+        std::vector<Eigen::MatrixXd> gradsX_;
+        std::vector<Eigen::MatrixXd> gradsY_;
     } SiftImageOctave;
 
     // passed from parameters
@@ -371,6 +454,7 @@ private:
     double dsigma_;
     double peakThreshold_;
     double edgeThreshold_;
+    double winFactor_;
 
     std::vector<SiftImageOctave> octaves_;
     std::vector<SiftKeyPoint> keyPoints_;

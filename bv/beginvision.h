@@ -6,7 +6,7 @@
 namespace bv {
     std::string BV_VERSION = "0.1";
     
-    const double pi = 3.1416;
+    const double PI = 3.1416;
         
     const int BV_OK = 0;
     const int BV_ERROR = -1;
