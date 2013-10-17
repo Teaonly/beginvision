@@ -381,19 +381,26 @@ _detect_done:
             }
             
             // find the maxvalue 
-            int maxIndex1, maxIndex2;
-            double maxV1 = hist.maxCoeff(&maxIndex1);
-            hist[maxIndex1] = 0.0;
-            double maxV2 = hist.maxCoeff(&maxIndex2);
-            
-            (*n).angle_ = maxIndex1*2.0*PI/orientHistNumber_;
-            if ( maxV2 > 0.8 * maxV1 ) {
-                SiftKeyPoint np = *n;
-                np.angle_ = maxIndex2*2.0*PI/orientHistNumber_;    
-                newPoints.push_back(np);
-            } 
+            int maxIndex;
+            double maxV = hist.maxCoeff(&maxIndex);
+            (*n).angle_ = refineAngle(hist, maxIndex);
+
+            for(int i = 0; i < orientHistNumber_; i++) {
+                if ( i == maxIndex ) {
+                    continue;
+                }           
+                int left = (i-1+orientHistNumber_) % orientHistNumber_;      
+                int right = (i+1) % orientHistNumber_;
+                if ( hist[i] >= 0.8 * maxV && hist[i] > hist[left] && hist[i] > hist[right] ) {
+                    SiftKeyPoint np = *n;
+                    np.angle_ = refineAngle(hist, i);            
+                    newPoints.push_back(np);
+                }
+            }
         }
         keyPoints_.insert(keyPoints_.end(), newPoints.begin(), newPoints.end());
+        
+        std::cout << "After orientation : " << keyPoints_.size() << std::endl;
     }
 
     void showDetect(Eigen::MatrixXd& img) {
@@ -430,6 +437,36 @@ _detect_done:
             }
         }
         Util::saveAsImage(img, "/tmp/xxx.bmp");
+    }
+
+    double refineAngle(const Eigen::ArrayXd& hist, const int& peakIndex) {
+        int leftIndex = (peakIndex - 1 + hist.size()) % hist.size();
+        int rightIndex = (peakIndex + 1) % hist.size();
+        double leftValue = hist[leftIndex];
+        double rightValue = hist[rightIndex];
+        double peakValue = hist[peakIndex];
+         
+        Eigen::MatrixXd A(3,3);
+        Eigen::MatrixXd C(3,1);
+        Eigen::MatrixXd B(3,1);
+        A(0,0) = 1; A(1,0) = -1; A(2,0) = 1;
+        A(0,1) = 0; A(1,1) = 0;  A(2,1) = 1;
+        A(0,2) = 1; A(1,0) = 1; A(2,2) = 1;
+        
+        C(0,0) = leftValue;
+        C(1,0) = peakValue;
+        C(2,0) = rightValue;
+        
+        B = A.inverse() * C;
+        double diff = -1 * B(1,0) / (2 * B(0,0));
+        double refineIndex = peakIndex + diff;
+        if ( refineIndex < 0) {
+            refineIndex += hist.size();
+        } else if ( refineIndex >= hist.size() ) {
+            refineIndex -= hist.size(); 
+        }
+        
+        return 2.0 * PI * refineIndex / hist.size();
     }
 
     void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
