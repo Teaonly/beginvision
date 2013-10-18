@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
     bv::DT_Sift detector;
     detector.run(g1);
-        
+    bv::DS_Sift descriptor(detector);        
     
     return 0;
 }

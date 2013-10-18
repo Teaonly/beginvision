@@ -29,7 +29,7 @@ public:
         peakThreshold_ = 0.003;
         edgeThreshold_ = (10 + 1)*(10 + 1) / 10.0;
         winFactor_ = 1.5;
-        orientHistNumber_ = 8;
+        orientHistNumber_ = 36;
     }
     
 public:
@@ -352,7 +352,6 @@ _detect_done:
             int windowSize = floor( 3.0 * weightSigma ); 
             
             // caculating the histogram of grad's angle 
-            const int orientHistNumber_ = 8;  
             Eigen::ArrayXd  hist(orientHistNumber_);
             int leftX = Util::max(cx-windowSize, 0);
             int rightX = Util::min(cx+windowSize, width-1); 
