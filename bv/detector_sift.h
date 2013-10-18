@@ -372,8 +372,8 @@ _detect_done:
                         angle = angle + 2*PI;
                     }
                     int abin = floor( 1.0*orientHistNumber_*angle/(2*PI) + 0.5);
-                    if ( abin >= orientHistNumber_) {
-                        abin = orientHistNumber_ - 1;
+                    if ( abin == orientHistNumber_) {
+                        abin = 0;
                     }
                     double weight = exp( -1 * ((x-cx)*(x-cx) + (y-cy)*(y-cy)) / (2*weightSigma*weightSigma) );
                     hist(abin) = hist(abin) + weight * mag;
