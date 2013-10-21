@@ -26,24 +26,27 @@ public:
 
 private:
     void run() {
+        std::vector<DT_Sift::SiftImageOctave>& octaves(detector_.octaves_);
+        
         for(int i = 0; i < detector_.keyPoints_.size(); i++) {  
             DT_Sift::SiftKeyPoint n = detector_.keyPoints_[i]; 
-            std::vector<DT_Sift::SiftImageOctave>& octaves(detector_.octaves_);
 
             int cx = floor( n.xx_ + 0.5);
             int cy = floor( n.yy_ + 0.5);
             double s = n.ss_;
-            int oi = n.octaveIndex_;
-            
             int si = floor( n.ss_ + 0.5);
             if ( si > detector_.numLevels_ - 1) {
                 si = detector_.numLevels_ - 1;
             }
+            int oi = n.octaveIndex_;
+            double mainAngle = n.angle_; 
+
             int width = octaves[oi].images_[si].rows();
             int height = octaves[oi].images_[si].cols();
             double weightSigma = winFactor_ * (NBP_/2) * detector_.sigma0_ * powf(2, s/detector_.S_ );
             int windowSize = floor( weightSigma * sqrt(2) + 0.5);
-            
+ 
+                       
             // Define the are of descriptor's window
             int leftX = Util::max(cx-windowSize, 0);
             int rightX = Util::min(cx+windowSize, width-1); 
@@ -51,8 +54,10 @@ private:
             int bottomY = Util::min(cy+windowSize, height-1);
             for (int x = leftX; x <= rightX; x++) {
                 for ( int y = topY; y <= bottomY; y++) {
-                    double dx = x - n.xx_;
-                    double dy = y - n.yy_;
+                    double xx = x - n.xx_;
+                    double yy = y - n.yy_;
+                    double dx = cos(mainAngle) * xx + sin(mainAngle) * yy;
+                    double dy = -1*sin(mainAngle) * xx + cos(mainAngle) * yy;     
                       
                 }
             }
