@@ -17,7 +17,20 @@
 namespace bv {
 
 class DS_Sift {
-public:    
+public:   
+    class SiftDescriptor {
+    public:    
+        SiftDescriptor(int nbp, int nbo) {
+            for ( int i = 0; i < nbo; i++) {
+                Eigen::MatrixXd empty = Eigen::MatrixXd::Zero(nbp, nbp);
+                values_.push_back(empty);    
+            }    
+        }
+
+        std::vector<Eigen::MatrixXd> values_;
+    }; 
+
+   
     DS_Sift(DT_Sift& dt):detector_(dt) {
         NBP_ = 4;
         NBO_ = 8;
@@ -30,9 +43,10 @@ private:
         std::vector<DT_Sift::SiftImageOctave>& octaves(detector_.octaves_);
         double weightSigma = NBP_ / 2.0;
         
-        for(int i = 0; i < detector_.keyPoints_.size(); i++) {  
-            DT_Sift::SiftKeyPoint n = detector_.keyPoints_[i]; 
-
+        for(int ki = 0; ki < detector_.keyPoints_.size(); ki++) {  
+            SiftDescriptor desc(NBP_, NBO_);                    
+            DT_Sift::SiftKeyPoint n = detector_.keyPoints_[ki]; 
+            
             int cx = floor( n.xx_ + 0.5);
             int cy = floor( n.yy_ + 0.5);
             double s = n.ss_;
@@ -73,17 +87,52 @@ private:
                     int ybin = floor(dy - 0.5);
                     int abin = floor(angle);  
                     
-                    //
-
+                    for ( int ibin = 0; ibin < 2; ibin ++) {
+                        for ( int jbin = 0; jbin < 2; jbin++) {
+                            for ( int kbin = 0; kbin < 2; kbin++) {
+                                // check int descripting area sround by window
+                                if ( (xbin + ibin) >= -(NBP_/2) &&
+                                     (xbin + ibin) < (NBP_/2) &&
+                                     (ybin + jbin) >= -(NBP_/2) &&
+                                     (ybin + jbin) < (NBP_/2) ) {
+                                    desc.values_[ (kbin + abin) % NBO_](xbin + ibin+NBP_/2, ybin+jbin+NBP_/2) += 
+                                            mag * weight *
+                                            (1-abs((xbin+ibin+0.5) - dx)) *
+                                            (1-abs((ybin+jbin+0.5) - dy)) *
+                                            (1-abs(kbin+abin-angle)) ;
+                                }
+                            }
+                        }
+                    }
+               }
+            }
+            
+            // Normalizes in norm L_2 a descriptor
+            double l2sum = 0.0;
+            for(int i = 0; i < NBO_; i++) {
+                for ( int j = 0; j < NBP_; j++) {
+                    for ( int k = 0; k < NBP_; k++) {
+                        if ( desc.values_[i](j,k) > 0.2) {
+                            desc.values_[i](j,k) = 0.2;
+                        }
+                        l2sum += desc.values_[i](j,k) * desc.values_[i](j,k);
+                    } 
                 }
             }
+            l2sum = sqrt(l2sum);
+            for(int i = 0; i < NBO_; i++) {
+                for ( int j = 0; j < NBP_; j++) {
+                    for ( int k = 0; k < NBP_; k++) {
+                        desc.values_[i](j,k) = desc.values_[i](j,k) / l2sum;
+                    } 
+                }
+            }
+                       
+            descs_.push_back( desc);
         }
     }    
     
 private:
-    typedef struct {
-    } SiftDescriptor; 
-
     DT_Sift& detector_;   
     double winFactor_; 
     int NBP_;
