@@ -324,8 +324,8 @@ _detect_done:
                 Eigen::MatrixXd gradX(wid, hei);
                 Eigen::MatrixXd gradY(wid, hei);
 
-                Filter::withTemplate(octaves_[oi].images_[li], gradX, hx);
-                Filter::withTemplate(octaves_[oi].images_[li], gradY, hy);
+                Filter::withTemplate(octaves_[oi].images_[li], gradX, hx, Filter::EXTENTION_NEAR);
+                Filter::withTemplate(octaves_[oi].images_[li], gradY, hy, Filter::EXTENTION_NEAR);
                 
                 octaves_[oi].gradsX_.push_back(gradX);
                 octaves_[oi].gradsY_.push_back(gradY);   
@@ -350,36 +350,56 @@ _detect_done:
 
             double weightSigma = winFactor_ * sigma0_ * powf(2, s/S_ );
             int windowSize = floor( 3.0 * weightSigma ); 
-            
+ 
+          
             // caculating the histogram of grad's angle 
             Eigen::ArrayXd  hist(orientHistNumber_);
+            for(int i = 0; i < orientHistNumber_; i++) {
+                hist(i) = 0.0;
+            }
             int leftX = Util::max(cx-windowSize, 0);
             int rightX = Util::min(cx+windowSize, width-1); 
             int topY = Util::max(cy-windowSize, 0);
             int bottomY = Util::min(cy+windowSize, height-1);
-            for(int i = 0; i < orientHistNumber_; i++) {
-                hist(i) = 0.0;
-            }
-            for (int x = leftX; x <= rightX; x++) {
-                for ( int y = topY; y <= bottomY; y++) {
+            
+            for ( int y = topY; y <= bottomY; y++) {
+                for (int x = leftX; x <= rightX; x++) {
+                    /* limit to a circular window */ 
+                    double r2 = (1.0*x-(*n).xx_)*(1.0*x-(*n).xx_) + (1.0*y-(*n).yy_)*(1.0*y-(*n).yy_);
+                    if (r2 >= windowSize*windowSize + 0.6) continue ; 
+                    
                     double mag =   octaves_[oi].gradsX_[si](x,y) * octaves_[oi].gradsX_[si](x,y) 
                                  + octaves_[oi].gradsY_[si](x,y) * octaves_[oi].gradsY_[si](x,y);
                     mag = sqrt(mag);
-                    double angle = atan2( octaves_[oi].gradsY_[si](x,y), octaves_[oi].gradsX_[si](x,y) );
-                    
+
+                    double weight = exp( 1.0 * r2 / (2*weightSigma*weightSigma) );
+                    double angle = atan2(octaves_[oi].gradsY_[si](x,y), octaves_[oi].gradsX_[si](x,y));
                     if ( angle < 0) {
                         angle = angle + 2*PI;
                     }
-                    int abin = floor( 1.0*orientHistNumber_*angle/(2*PI) + 0.5);
-                    if ( abin == orientHistNumber_) {
-                        abin = 0;
-                    }
-                    double weight = exp( -1 * ((x-cx)*(x-cx) + (y-cy)*(y-cy)) / (2*weightSigma*weightSigma) );
-                    hist(abin) = hist(abin) + weight * mag;
+                    double fbin = orientHistNumber_*angle/(2*PI);
+                    int bin = (int) floor(fbin - 0.5) ; 
+                    double rbin = fbin - bin - 0.5 ;
+                    hist((bin + orientHistNumber_) % orientHistNumber_) += (1 - rbin) * mag * weight ;
+                    hist((bin +                 1) % orientHistNumber_) += (    rbin) * mag * weight ;     
                 }
             }
             
-            // find the maxvalue 
+
+            /*  smooth histogram */ 
+            for (int iter = 0; iter < 6; iter ++) {
+                double prev  = hist (orientHistNumber_ - 1) ; 
+                double first = hist (0) ;
+                int i ;
+                for (i = 0; i < orientHistNumber_ - 1; i++) {
+                    double newh = (prev + hist(i) + hist((i+1) % orientHistNumber_)) / 3.0; 
+                    prev = hist(i) ;
+                    hist(i) = newh ;
+                }    
+                hist(i) = (prev + hist(i) + first) / 3.0 ;
+            }
+            
+           // find the maxvalue 
             int maxIndex;
             double maxV = hist.maxCoeff(&maxIndex);
             (*n).angle_ = refineAngle(hist, maxIndex);
@@ -397,7 +417,7 @@ _detect_done:
                 }
             }
         }
-        keyPoints_.insert(keyPoints_.end(), newPoints.begin(), newPoints.end());
+        keyPoints_.insert(keyPoints_.begin(), newPoints.begin(), newPoints.end());
         
         std::cout << "After orientation : " << keyPoints_.size() << std::endl;
     }
@@ -444,18 +464,19 @@ _detect_done:
         double leftValue = hist[leftIndex];
         double rightValue = hist[rightIndex];
         double peakValue = hist[peakIndex];
-         
+        
+#if 0        
         Eigen::MatrixXd A(3,3);
         Eigen::MatrixXd C(3,1);
         Eigen::MatrixXd B(3,1);
         A(0,0) = 1; A(1,0) = -1; A(2,0) = 1;
         A(0,1) = 0; A(1,1) = 0;  A(2,1) = 1;
         A(0,2) = 1; A(1,0) = 1; A(2,2) = 1;
-        
+
         C(0,0) = leftValue;
         C(1,0) = peakValue;
         C(2,0) = rightValue;
-        
+       
         B = A.inverse() * C;
         double diff = -1 * B(1,0) / (2 * B(0,0));
         double refineIndex = peakIndex + diff;
@@ -466,6 +487,17 @@ _detect_done:
         }
         
         return 2.0 * PI * refineIndex / hist.size();
+#else
+        double diff = - 0.5 * (rightValue - leftValue) / ( rightValue + leftValue - 2 * peakValue) ;
+        double refineIndex = peakIndex + diff;
+        double angle = 2.0 * PI * (refineIndex + 0.5) / hist.size();
+        if ( angle > 2*PI) {
+            angle = angle - 2*PI;
+        }
+        return angle;
+#endif
+
+            
     }
 
     void siftSmooth(Eigen::MatrixXd& in, Eigen::MatrixXd& out, double sigma) {
