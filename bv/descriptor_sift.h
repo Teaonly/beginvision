@@ -121,6 +121,14 @@ private:
             // Normalizes in norm L_2 a descriptor
             double l2sum = 0.0;
             for(int i = 0; i < NBO_* NBP_ * NBP_; i++) {
+                l2sum += desc.values_[i] * desc.values_[i];
+            }
+            l2sum = sqrt(l2sum);
+            for(int i = 0; i < NBO_* NBP_ * NBP_; i++) {
+                desc.values_[i] /= l2sum;
+            }
+            l2sum = 0.0;
+            for(int i = 0; i < NBO_* NBP_ * NBP_; i++) {
                 if ( desc.values_[i] > 0.2) {
                     desc.values_[i] = 0.2;
                 }
@@ -130,7 +138,15 @@ private:
             for(int i = 0; i < NBO_* NBP_ * NBP_; i++) {
                 desc.values_[i] /= l2sum;
             }
+
             descs_.push_back( desc);
+/*
+            for(int i = 0; i < NBO_* NBP_ * NBP_; i++) {
+                std::cout << desc.values_[i] << " " ;
+            }
+            std::cout << std::endl;
+            exit(0);
+*/
         }
     }    
     
