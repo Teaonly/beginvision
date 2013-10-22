@@ -33,6 +33,12 @@ double interp2(double x, double y, Eigen::MatrixXd& img) {
     return (y - topY) * bottom + (bottomY - y) * top;
 }
 
+double mod2pi(double x) {
+    while (x > (double)(2 * PI)) x -= (double) (2 * PI) ;
+    while (x < 0.0) x += (double) (2 * PI);
+    return x ;  
+}
+
 void saveAsImage(Eigen::MatrixXd& x, const std::string& fileName) {
     Image tmp(x.rows(), x.cols());
     ColorImage<3> tmp2(x.rows(), x.cols());

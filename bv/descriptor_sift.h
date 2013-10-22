@@ -20,14 +20,18 @@ class DS_Sift {
 public:   
     class SiftDescriptor {
     public:    
-        SiftDescriptor(int nbp, int nbo) {
-            for ( int i = 0; i < nbo; i++) {
-                Eigen::MatrixXd empty = Eigen::MatrixXd::Zero(nbp, nbp);
-                values_.push_back(empty);    
+        SiftDescriptor(int nbp, int nbo):nbp_(nbp), nbo_(nbo) {
+            for ( int i = 0; i < nbo_*nbp_*nbp_; i++) {
+                values_.push_back(0.0);    
             }    
         }
+        double& val(int x, int y, int o) {
+            return values_[x*nbo_ + y*nbp_*nbo_ + o]; 
+        }
 
-        std::vector<Eigen::MatrixXd> values_;
+        std::vector<double> values_;
+        int nbp_;
+        int nbo_;
     }; 
 
    
@@ -46,7 +50,7 @@ private:
         for(int ki = 0; ki < detector_.keyPoints_.size(); ki++) {  
             SiftDescriptor desc(NBP_, NBO_);                    
             DT_Sift::SiftKeyPoint n = detector_.keyPoints_[ki]; 
-            
+                
             int cx = floor( n.xx_ + 0.5);
             int cy = floor( n.yy_ + 0.5);
             double s = n.ss_;
@@ -61,14 +65,15 @@ private:
             int height = octaves[oi].images_[si].cols();
             double binSize = winFactor_ * detector_.sigma0_ * powf(2, s/detector_.S_ );
             int windowSize = floor( binSize * sqrt(2) * (NBP_+1) / 2.0 + 0.5);
-            
+ 
+           
             // Define the are of descriptor's window
-            int leftX = Util::max(cx-windowSize, 0);
-            int rightX = Util::min(cx+windowSize, width-1); 
-            int topY = Util::max(cy-windowSize, 0);
-            int bottomY = Util::min(cy+windowSize, height-1);
-            for (int x = leftX; x <= rightX; x++) {
-                for ( int y = topY; y <= bottomY; y++) {
+            int leftX = Util::max(cx-windowSize, 1);
+            int rightX = Util::min(cx+windowSize, width-2); 
+            int topY = Util::max(cy-windowSize, 1);
+            int bottomY = Util::min(cy+windowSize, height-2);
+            for ( int y = topY; y <= bottomY; y++) {
+                for (int x = leftX; x <= rightX; x++) {
 
                     double xx = x - n.xx_;
                     double yy = y - n.yy_;
@@ -78,15 +83,18 @@ private:
                     double mag =   octaves[oi].gradsX_[si](x,y) * octaves[oi].gradsX_[si](x,y) 
                                  + octaves[oi].gradsY_[si](x,y) * octaves[oi].gradsY_[si](x,y);
                     mag = sqrt(mag);
-                    double angle = atan2( octaves[oi].gradsY_[si](x,y), octaves[oi].gradsX_[si](x,y) );
-                    if ( angle < 0) {  
-                        angle = angle + 2*PI;
-                    }
+                    double angle = atan2( octaves[oi].gradsY_[si](x,y), octaves[oi].gradsX_[si](x,y) ) - mainAngle;
+                    angle = Util::mod2pi(angle);
+
                     angle = 1.0 * NBO_ * angle / (2.0*PI) ; 
                     int xbin = floor(dx - 0.5);
                     int ybin = floor(dy - 0.5);
                     int abin = floor(angle);  
                     
+                    double rxbin = dx - (xbin + 0.5) ; 
+                    double rybin = dy - (ybin + 0.5) ;
+                    double rabin = angle - abin ;            
+
                     for ( int ibin = 0; ibin < 2; ibin ++) {
                         for ( int jbin = 0; jbin < 2; jbin++) {
                             for ( int kbin = 0; kbin < 2; kbin++) {
@@ -95,39 +103,33 @@ private:
                                      (xbin + ibin) < (NBP_/2) &&
                                      (ybin + jbin) >= -(NBP_/2) &&
                                      (ybin + jbin) < (NBP_/2) ) {
-                                    desc.values_[ (kbin + abin) % NBO_](xbin + ibin+NBP_/2, ybin+jbin+NBP_/2) += 
+                                    int o = (kbin + abin)%NBO_;
+                                    int nx = xbin + ibin + NBP_/2;
+                                    int ny = ybin + jbin + NBP_/2;
+                                    desc.val(nx, ny, o) += 
                                             mag * weight *
-                                            (1-abs((xbin+ibin+0.5) - dx)) *
-                                            (1-abs((ybin+jbin+0.5) - dy)) *
-                                            (1-abs(kbin+abin-angle)) ;
+                                            fabs(1.0 - 1.0*ibin - rxbin) *
+                                            fabs(1.0 - 1.0*jbin - rybin) *
+                                            fabs(1.0 - 1.0*kbin - rabin);
                                 }
                             }
                         }
                     }
                }
             }
-            
+        
             // Normalizes in norm L_2 a descriptor
             double l2sum = 0.0;
-            for(int i = 0; i < NBO_; i++) {
-                for ( int j = 0; j < NBP_; j++) {
-                    for ( int k = 0; k < NBP_; k++) {
-                        if ( desc.values_[i](j,k) > 0.2) {
-                            desc.values_[i](j,k) = 0.2;
-                        }
-                        l2sum += desc.values_[i](j,k) * desc.values_[i](j,k);
-                    } 
+            for(int i = 0; i < NBO_* NBP_ * NBP_; i++) {
+                if ( desc.values_[i] > 0.2) {
+                    desc.values_[i] = 0.2;
                 }
+                l2sum += desc.values_[i] * desc.values_[i];
             }
             l2sum = sqrt(l2sum);
-            for(int i = 0; i < NBO_; i++) {
-                for ( int j = 0; j < NBP_; j++) {
-                    for ( int k = 0; k < NBP_; k++) {
-                        desc.values_[i](j,k) = desc.values_[i](j,k) / l2sum;
-                    } 
-                }
+            for(int i = 0; i < NBO_* NBP_ * NBP_; i++) {
+                desc.values_[i] /= l2sum;
             }
-                       
             descs_.push_back( desc);
         }
     }    
