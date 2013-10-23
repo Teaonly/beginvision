@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Begin compute match...." << std::endl;
     std::vector<int> result;
     ds1.matchWith(ds2, result);
+    ds1.showMatch(ds2, result, g1, g2);
 
     return 0;
 }

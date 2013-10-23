@@ -36,7 +36,7 @@ public:
             }
             double l2dist = 0.0;
             for (int i = 0; i < values_.size(); i++) {
-                l2dist += values_[i] * b.values_[i];
+                l2dist += (values_[i] - b.values_[i] ) * (values_[i] - b.values_[i] );
             }
             return sqrt(l2dist);
         }
@@ -79,7 +79,7 @@ public:
                     minValue[1] = dist;
                 }
             }
-            
+             
             if ( minValue[0] / minValue[1] < threshold_ ) {
                 count ++;
                 results.push_back(minIndex);
@@ -87,11 +87,25 @@ public:
                 results.push_back(-1);
             }
         }   
-
-        std::cout << "Matched keypoint is " << count << std::endl;
+        
+        std::cout << "Matched points = " << count << std::endl;
 
         return BV_OK;
     }
+   
+    // Just for debug
+    int showMatch(DS_Sift& other, std::vector<int>& results, Eigen::MatrixXd& img1, Eigen::MatrixXd& img2) {
+        std::cout << "Show result..." << std::endl;
+        for (int i = 0; i < results.size(); i++) {
+            if ( results[i] != -1) {
+                detector_.showKeypoint(img1, i);
+                int j = results[i];
+                other.detector_.showKeypoint(img2, j);
+            }
+        }
+        Util::saveAsImage(img1, "/tmp/xxx1.bmp");
+        Util::saveAsImage(img2, "/tmp/xxx2.bmp");
+    } 
 
 private:
     void run() {
@@ -201,7 +215,6 @@ private:
         }
     }    
     
-        
 
 private:
     DT_Sift& detector_;   

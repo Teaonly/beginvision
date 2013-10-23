@@ -60,8 +60,8 @@ public:
         getOrientation();
 
         // 5. show detecing result , just for debug
-        I = img;
-        showDetect(I);
+        //I = img;
+        //showDetect(I);
           
         return BV_OK;
     }
@@ -421,38 +421,44 @@ _detect_done:
         
         std::cout << "After orientation : " << keyPoints_.size() << std::endl;
     }
+    
+    void showKeypoint(Eigen::MatrixXd& img, int i) {
+        SiftKeyPoint key = keyPoints_[i];
+
+        int centerx = (int)key.xx_ * powf(2, key.octaveIndex_ + minOctave_); 
+        int centery = (int)key.yy_ * powf(2, key.octaveIndex_ + minOctave_);
+        
+        double scale = powf(2, key.octaveIndex_ + minOctave_) * sigma0_;
+        scale = scale * powf(2, key.ss_/S_); 
+        //scale = scale * 2;
+
+        for ( double r = 0.0; r <= 2*PI ; r += PI/40) {
+            int xx = (int)( sinf(r) * scale + centerx);
+            int yy = (int)( cosf(r) * scale + centery);
+            if (    xx >= 0 
+                 && xx < img.rows() 
+                 && yy >= 0
+                 && yy < img.cols() ) {
+                img(xx,yy) = 1;
+            }
+        }
+        double angle_ = key.angle_;
+        for (int d = 0; d < scale; d++) {
+            int xx = (int)( sinf(angle_) * d + centerx);
+            int yy = (int)( cosf(angle_) * d + centery);
+            if (    xx >= 0 
+                 && xx < img.rows() 
+                 && yy >= 0
+                 && yy < img.cols() ) {
+                img(xx,yy) = 1;
+            }
+        }
+    }
 
     void showDetect(Eigen::MatrixXd& img) {
         for (int i = 0; i < keyPoints_.size(); i++) {
             if ( keyPoints_[i].octaveIndex_ >= 1) {
-                int centerx = (int)keyPoints_[i].xx_ * powf(2, keyPoints_[i].octaveIndex_ + minOctave_); 
-                int centery = (int)keyPoints_[i].yy_ * powf(2, keyPoints_[i].octaveIndex_ + minOctave_);
-                
-                double scale = powf(2, keyPoints_[i].octaveIndex_ + minOctave_) * sigma0_;
-                scale = scale * powf(2, keyPoints_[i].ss_/S_); 
-                //scale = scale * 2;
-
-                for ( double r = 0.0; r <= 2*PI ; r += PI/40) {
-                    int xx = (int)( sinf(r) * scale + centerx);
-                    int yy = (int)( cosf(r) * scale + centery);
-                    if (    xx >= 0 
-                         && xx < img.rows() 
-                         && yy >= 0
-                         && yy < img.cols() ) {
-                        img(xx,yy) = 1;
-                    }
-                }
-                double angle_ = keyPoints_[i].angle_;
-                for (int d = 0; d < scale; d++) {
-                    int xx = (int)( sinf(angle_) * d + centerx);
-                    int yy = (int)( cosf(angle_) * d + centery);
-                    if (    xx >= 0 
-                         && xx < img.rows() 
-                         && yy >= 0
-                         && yy < img.cols() ) {
-                        img(xx,yy) = 1;
-                    }
-                }
+                showKeypoint(img, i);
             }
         }
         Util::saveAsImage(img, "/tmp/xxx.bmp");
