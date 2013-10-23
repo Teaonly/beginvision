@@ -28,18 +28,69 @@ public:
         double& val(int x, int y, int o) {
             return values_[x*nbo_ + y*nbp_*nbo_ + o]; 
         }
+        
+        double distanceWith(const SiftDescriptor& b) {
+            if ( nbp_ != b.nbp_  ||
+                 nbo_ != b.nbo_ )  {
+                return -1;
+            }
+            double l2dist = 0.0;
+            for (int i = 0; i < values_.size(); i++) {
+                l2dist += values_[i] * b.values_[i];
+            }
+            return sqrt(l2dist);
+        }
 
         std::vector<double> values_;
         int nbp_;
         int nbo_;
     }; 
 
-   
     DS_Sift(DT_Sift& dt):detector_(dt) {
         NBP_ = 4;
         NBO_ = 8;
         winFactor_ = 3.0;
+        threshold_ = 0.8;
         run();
+    }
+
+    int matchWith(DS_Sift& other, std::vector<int>& results) {
+        if ( other.NBP_ != NBP_ ||
+             other.NBO_ != NBO_ ) {
+            return BV_ERROR_PARAMETER;
+        }
+        
+        int count = 0;
+        results.clear();
+        for(int i = 0; i < descs_.size(); i++) {
+            double minValue[2];
+            int minIndex;  
+
+            minValue[0] = 1 / threshold_;
+            minValue[1] = 1 / threshold_;
+            for ( int j = 0; j < other.descs_.size(); j++) {
+                double dist = descs_[i].distanceWith(other.descs_[j] );
+                if ( dist <  minValue[0] ) {
+                    minValue[1] = minValue[0];
+
+                    minIndex = j;
+                    minValue[0] = dist;
+                } else if ( dist < minValue[1] ) {
+                    minValue[1] = dist;
+                }
+            }
+            
+            if ( minValue[0] / minValue[1] < threshold_ ) {
+                count ++;
+                results.push_back(minIndex);
+            } else {
+                results.push_back(-1);
+            }
+        }   
+
+        std::cout << "Matched keypoint is " << count << std::endl;
+
+        return BV_OK;
     }
 
 private:
@@ -150,11 +201,14 @@ private:
         }
     }    
     
+        
+
 private:
     DT_Sift& detector_;   
     double winFactor_; 
     int NBP_;
     int NBO_;
+    double threshold_;
 
     std::vector<SiftDescriptor> descs_;
 };
