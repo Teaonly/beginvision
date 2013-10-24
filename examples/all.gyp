@@ -84,6 +84,14 @@
             'example10.cpp',
         ],
     },
+    {
+        'target_name': 'ex11',
+        'type': 'executable',
+        'sources': [
+            'example11.cpp',
+        ],
+    },
+
 
 
     ],

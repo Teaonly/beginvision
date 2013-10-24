@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
     std::vector<int> result;
     ds1.matchWith(ds2, result);
     ds1.showMatch(ds2, result, g1, g2);
+    ds1.saveMatch(ds2, result);
 
     return 0;
 }

@@ -94,15 +94,25 @@ public:
     }
 
     int saveMatch(DS_Sift& other, std::vector<int>& results ) {
+        FILE* fp = fopen("./match.txt", "wt");
+
         for (int i = 0; i < results.size(); i++) {
             if ( results[i] != -1) {
                 DT_Sift::SiftKeyPoint a = detector_.keyPoints_[i];
                 DT_Sift::SiftKeyPoint b = other.detector_.keyPoints_[ results[i] ];
                 
+                double xa, ya, xb, yb;
+                xa = a.xx_ * powf(2, a.octaveIndex_ + detector_.minOctave_); 
+                ya = a.yy_ * powf(2, a.octaveIndex_ + detector_.minOctave_);
 
+                xb = b.xx_ * powf(2, b.octaveIndex_ + other.detector_.minOctave_); 
+                yb = b.yy_ * powf(2, b.octaveIndex_ + other.detector_.minOctave_);
+                
+                fprintf(fp, "%f %f %f %f\n", xa,ya,xb,yb);
             }
         }
-   
+        
+        fclose(fp); 
     } 
 
     // Just for debug
