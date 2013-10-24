@@ -92,7 +92,19 @@ public:
 
         return BV_OK;
     }
+
+    int saveMatch(DS_Sift& other, std::vector<int>& results ) {
+        for (int i = 0; i < results.size(); i++) {
+            if ( results[i] != -1) {
+                DT_Sift::SiftKeyPoint a = detector_.keyPoints_[i];
+                DT_Sift::SiftKeyPoint b = other.detector_.keyPoints_[ results[i] ];
+                
+
+            }
+        }
    
+    } 
+
     // Just for debug
     int showMatch(DS_Sift& other, std::vector<int>& results, Eigen::MatrixXd& img1, Eigen::MatrixXd& img2) {
         std::cout << "Show result..." << std::endl;
@@ -105,6 +117,8 @@ public:
         }
         Util::saveAsImage(img1, "/tmp/xxx1.bmp");
         Util::saveAsImage(img2, "/tmp/xxx2.bmp");
+        
+        return BV_OK;
     } 
 
 private:

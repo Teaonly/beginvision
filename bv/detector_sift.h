@@ -517,7 +517,7 @@ _detect_done:
 
 
 private:
-    typedef struct {
+    struct SiftKeyPoint{
         unsigned int x_;
         unsigned int y_;
         unsigned int levelIndex_;
@@ -528,16 +528,16 @@ private:
         double yy_;
         double ss_;
         double angle_;
-    } SiftKeyPoint;
+    };
 
-    typedef struct {
+    struct SiftImageOctave{
         unsigned int width_;
         unsigned int height_;
         std::vector<Eigen::MatrixXd> images_;
         std::vector<Eigen::MatrixXd> dogs_;
         std::vector<Eigen::MatrixXd> gradsX_;
         std::vector<Eigen::MatrixXd> gradsY_;
-    } SiftImageOctave;
+    };
 
     // passed from parameters
     int numOctaves_;
