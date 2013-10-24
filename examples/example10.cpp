@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     bv::Image i1( c1.color(0).width(), c1.color(0).height() );
     Eigen::MatrixXd g1(i1.width(), i1.height());
     bv::Image i2( c2.color(0).width(), c2.color(0).height() );
-    Eigen::MatrixXd g2(i1.width(), i2.height());
+    Eigen::MatrixXd g2(i2.width(), i2.height());
 
     bv::Convert::colorImageToGrayImage(c1, i1);     //i1 = c1.color(1);
     bv::Convert::grayImageToMatrix( i1, g1);
