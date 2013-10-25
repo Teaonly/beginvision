@@ -1,6 +1,7 @@
 #ifndef _BV_UTIL_H_
 #define _BV_UTIL_H_
 
+#include "beginvision.h"
 #include <Eigen/Core>
 
 namespace bv {
