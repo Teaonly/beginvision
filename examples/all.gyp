@@ -15,84 +15,68 @@
     },
     'targets': [
     {
-        'target_name': 'ex1',
+        'target_name': 'io',
         'type': 'executable',
         'sources': [
-            'example1.cpp',
+            'io.cpp',
         ],
     },
     {
-        'target_name': 'ex2',
+        'target_name': 'filter',
         'type': 'executable',
         'sources': [
-            'example2.cpp',
+            'filter.cpp',
         ],
     },
     {
-        'target_name': 'ex3',
+        'target_name': 'resize',
         'type': 'executable',
         'sources': [
-            'example3.cpp',
+            'resize.cpp',
         ],
     },
     {
-        'target_name': 'ex4',
+        'target_name': 'harris',
         'type': 'executable',
         'sources': [
-            'example4.cpp',
+            'harris.cpp',
         ],
     },
     {
-        'target_name': 'ex5',
+        'target_name': 'blob',
         'type': 'executable',
         'sources': [
-            'example5.cpp',
+            'blob.cpp',
         ],
     },
     {
-        'target_name': 'ex6',
+        'target_name': 'lbfgs',
         'type': 'executable',
         'sources': [
-            'example6.cpp',
+            'lbfgs.cpp',
         ],
     },
     {
-        'target_name': 'ex7',
+        'target_name': 'lkp',
         'type': 'executable',
         'sources': [
-            'example7.cpp',
+            'lkpTrack.cpp',
         ],
     },
     {
-        'target_name': 'ex8',
+        'target_name': 'sift',
         'type': 'executable',
         'sources': [
-            'example8.cpp',
+            'sift.cpp',
         ],
     },
     {
-        'target_name': 'ex9',
+        'target_name': 'affine',
         'type': 'executable',
         'sources': [
-            'example9.cpp',
+            'affineMatch.cpp',
         ],
     },
-    {
-        'target_name': 'ex10',
-        'type': 'executable',
-        'sources': [
-            'example10.cpp',
-        ],
-    },
-    {
-        'target_name': 'ex11',
-        'type': 'executable',
-        'sources': [
-            'example11.cpp',
-        ],
-    },
-
-
 
     ],
 }

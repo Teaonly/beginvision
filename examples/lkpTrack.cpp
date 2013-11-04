@@ -7,14 +7,9 @@
 #include <bv/track_lkp.h>
 
 int main(int argc, char *argv[]) {
-    if ( argc < 3) {
-        std::cout << "Please input bmp files!" << std::endl;
-        return -1;
-    }
-    
     int ret;  
-    bv::ColorImage<3> c1( argv[1] );
-    bv::ColorImage<3> c2( argv[2] );
+    bv::ColorImage<3> c1( "./1.bmp" );
+    bv::ColorImage<3> c2( "./2.bmp" );
 
     bv::Image i1( c1.color(0).width(), c1.color(0).height() );
     bv::Image i2( c1.color(0).width(), c1.color(0).height() );
@@ -48,7 +43,7 @@ int main(int argc, char *argv[]) {
         c2.color(0).data(xx+xresult[0], y+yresult[0]) = c2.color(2).data(xx+xresult[0], y+yresult[0]) = 0;
         c2.color(1).data(xx+xresult[0], y+yresult[0]) = 255;
     }
-    c1.SaveImageToBMP("/tmp/1x.bmp");
-    c2.SaveImageToBMP("/tmp/2x.bmp");
+    c1.SaveImageToBMP("result_1.bmp");
+    c2.SaveImageToBMP("result_2.bmp");
 }
 

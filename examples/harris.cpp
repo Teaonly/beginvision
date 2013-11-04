@@ -33,6 +33,6 @@ int main(int argc, char *argv[]) {
         c1.color(2).data(xresult[i], yresult[i]) = 255;
     }
 
-    c1.SaveImageToBMP("/tmp/x.bmp");
+    c1.SaveImageToBMP("result.bmp");
 }
 

@@ -182,15 +182,11 @@ void doAffine(const char *fileName, const std::vector<double> mode) {
         }
     } 
     
-    bv::Util::saveAsImage(g2, "/tmp/xxx.bmp");
+    bv::Util::saveAsImage(g2, "result.bmp");
 }
 
 
 int main(int argc, char *argv[]) {
-    if ( argc < 2) {
-        std::cout << "Please input one bmp file!" << std::endl;
-        return -1;
-    }
     
     std::vector<double> data;
     FILE* fp = fopen("./match.txt", "rb");
@@ -213,7 +209,7 @@ int main(int argc, char *argv[]) {
     std::vector<double> result;
     int ret = doRANSAC(data, result);
     if ( ret == 0) {
-        doAffine(argv[1], result);  
+        doAffine("./book.bmp", result);  
     }
     return 0;
 }

@@ -93,8 +93,8 @@ public:
         return BV_OK;
     }
 
-    int saveMatch(DS_Sift& other, std::vector<int>& results ) {
-        FILE* fp = fopen("./match.txt", "wt");
+    int saveMatch(DS_Sift& other, std::vector<int>& results , const std::string& fileName) {
+        FILE* fp = fopen(fileName.c_str(), "wt");
 
         for (int i = 0; i < results.size(); i++) {
             if ( results[i] != -1) {

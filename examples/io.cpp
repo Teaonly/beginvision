@@ -18,5 +18,5 @@ int main(int argc, char *argv[]) {
     img2.data = img.data.transpose();
 
     bv::Convert::grayImageToColorImage(img2, colorImage);
-    colorImage.SaveImageToBMP("/tmp/xx.bmp");
+    colorImage.SaveImageToBMP("result.bmp");
 }

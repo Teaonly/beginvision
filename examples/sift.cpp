@@ -8,14 +8,9 @@
 #include <bv/descriptor_sift.h>
 
 int main(int argc, char *argv[]) {
-    if ( argc < 3) {
-        std::cout << "Please input two bmp file!" << std::endl;
-        return -1;
-    }
-    
     int ret;  
-    bv::ColorImage<3> c1( argv[1] );
-    bv::ColorImage<3> c2( argv[2] );
+    bv::ColorImage<3> c1( "book.bmp" );
+    bv::ColorImage<3> c2( "scene.bmp" );
 
     bv::Image i1( c1.color(0).width(), c1.color(0).height() );
     Eigen::MatrixXd g1(i1.width(), i1.height());
@@ -39,7 +34,7 @@ int main(int argc, char *argv[]) {
     std::vector<int> result;
     ds1.matchWith(ds2, result);
     ds1.showMatch(ds2, result, g1, g2);
-    ds1.saveMatch(ds2, result);
+    ds1.saveMatch(ds2, result, std::string("./match.txt"));
 
     return 0;
 }

@@ -17,13 +17,8 @@ int run(Eigen::MatrixXd& img, Eigen::MatrixXd& img2, const double sigma) {
 }
 
 int main(int argc, char *argv[]) {
-    if ( argc < 2) {
-        std::cout << "Please input bmp file!" << std::endl;
-        return -1;
-    }
-    
     int ret;  
-    bv::ColorImage<3> c1( argv[1] );
+    bv::ColorImage<3> c1( "./flower.bmp" );
 
     bv::Image i1( c1.color(0).width(), c1.color(0).height() );
     Eigen::MatrixXd g1(i1.width(), i1.height());
@@ -56,7 +51,7 @@ int main(int argc, char *argv[]) {
         c1.color(0).data(xx+r, y) = c1.color(2).data(xx+r, y) = 0;
         c1.color(1).data(xx+r, y) = 255;
     }
-    c1.SaveImageToBMP("/tmp/x.bmp");
+    c1.SaveImageToBMP("result.bmp");
 
     return 0;
 }

@@ -15,12 +15,17 @@ int main(int argc, char *argv[]) {
     bv::Image img( colorImage.color(0).width(), colorImage.color(0).height() );
     Eigen::MatrixXd gray(img.width(), img.height());
 
+
     bv::Convert::colorImageToGrayImage(colorImage, img);
-    ret = bv::Convert::grayImageToMatrix( img, gray);   
-    //ret = bv::Filter::average(gray, gray, 5);
-    ret = bv::Filter::gaussianBlur(gray, gray, 9, 3.0);
-    ret = bv::Convert::matrixToGrayImage(gray, img);    
+    bv::Convert::grayImageToMatrix(img, gray);
+
+    Eigen::MatrixXd small(img.width()*2, img.height()*2);
+    bv::Image imgSmall( small.rows(), small.cols() );
+    bv::ColorImage<3> colorImageSmall(imgSmall.width(), imgSmall.height());
+
+    bv::Convert::resizeImage(gray, small);
     
-    bv::Convert::grayImageToColorImage(img, colorImage);
-    colorImage.SaveImageToBMP("/tmp/xx.bmp");
+    bv::Convert::matrixToGrayImage(small, imgSmall);    
+    bv::Convert::grayImageToColorImage(imgSmall, colorImageSmall);
+    colorImageSmall.SaveImageToBMP("result.bmp");
 }
