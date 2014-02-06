@@ -1,3 +1,3 @@
 LOCAL_SRC_FILES += \
-         src/vibe.cpp\
+         src/vibe_test.cpp\
          src/main_jni.cpp

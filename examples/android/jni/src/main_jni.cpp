@@ -1,7 +1,7 @@
 #include <string>
 #include <jni.h>
 
-#include "vibe.h"
+#include "vibe_test.h"
 
 #undef JNIEXPORT
 #define JNIEXPORT __attribute__((visibility("default")))
@@ -16,7 +16,6 @@
 //
 //  Internal helper functions
 //
-/*
 static std::string convert_jstring(JNIEnv* env, const jstring &js) {
     static char outbuf[1024];
     int len = env->GetStringLength(js);
@@ -25,6 +24,7 @@ static std::string convert_jstring(JNIEnv* env, const jstring &js) {
     return str;
 }
 
+/*
 static jint get_native_fd(JNIEnv* env, jobject fdesc) {
     jclass clazz;
     jfieldID fid;
@@ -38,9 +38,11 @@ static jint get_native_fd(JNIEnv* env, jobject fdesc) {
 //
 //  Global functions called from Java side 
 //
-JOW(int, updatePicture)(JNIEnv* env, jclass, jbyteArray yuvData, jint wid, jint hei) {
+JOW(int, updatePicture)(JNIEnv* env, jclass, jstring target, jbyteArray yuvData, jint wid, jint hei) {
+    std::string objTarget = convert_jstring(env, target);
+
     jbyte* cameraFrame= env->GetByteArrayElements(yuvData, NULL);
-    //CameraCapture::myCapture->updatePicture((unsigned char *)cameraFrame);
+    
     env->ReleaseByteArrayElements(yuvData, cameraFrame, JNI_ABORT);
     return 0;
 }
