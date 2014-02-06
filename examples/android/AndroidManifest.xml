@@ -3,7 +3,8 @@
       package="com.beginvision.demo"
       android:versionCode="1"
       android:versionName="1.0">
-    <application android:label="@string/app_name" >
+    <application android:label="@string/app_name" 
+        android:theme="@style/AppTheme">
         <activity android:name="DemoActivity"
                   android:label="@string/app_name">
             <intent-filter>
@@ -11,5 +12,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <activity android:name="VibeActivity"
+                  android:screenOrientation="landscape">
+        </activity>
+
     </application>
+
+    <uses-sdk android:minSdkVersion="14" />
+    <uses-sdk android:targetSdkVersion="16" />
+          
+    <supports-screens android:resizeable="true"
+        android:smallScreens="true" 
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true" 
+        android:anyDensity="true" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />   
 </manifest> 
