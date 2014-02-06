@@ -19,8 +19,10 @@ import android.os.Handler;
 import android.util.*;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 
 public class VibeActivity extends Activity
@@ -32,8 +34,6 @@ public class VibeActivity extends Activity
     private CameraView cameraView = null;
     private OverlayView overlayView = null;
     private AudioRecord audioCapture = null;
-
-    TextView tvMessage;
 
     //
     //  Activiity's event handler
@@ -49,8 +49,10 @@ public class VibeActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.vibe);
 
-        tvMessage = (TextView)findViewById(R.id.tv_message);
-        tvMessage.setText("This a VIBE (VIsual Background Extractor) demo");
+        TextView tv = (TextView)findViewById(R.id.tv_message);
+        tv.setText("This a VIBE (VIsual Background Extractor) demo");
+        Button btn = (Button)findViewById(R.id.btn_control);
+        btn.setOnClickListener(controlAction);
 
         // init audio and camera
         initAudio();
@@ -117,8 +119,8 @@ public class VibeActivity extends Activity
         }
         
         audioCapture.startRecording();
-        AudioEncoder audioEncoder = new AudioEncoder();
-        audioEncoder.start();  
+        AudioProcessor audioProcessor = new AudioProcessor();
+        audioProcessor.start();  
     }   
      
     //
@@ -133,7 +135,14 @@ public class VibeActivity extends Activity
         }
     };
 
-    private class AudioEncoder extends Thread {
+    private OnClickListener controlAction = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+                
+        }   
+    };
+
+    private class AudioProcessor extends Thread {
         byte[] audioPackage = new byte[1024*16];
         int packageSize = 320*6;  // 60ms
 
@@ -150,4 +159,5 @@ public class VibeActivity extends Activity
             }
         }   
     }
+    
 }
