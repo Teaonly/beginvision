@@ -6,7 +6,6 @@
 #include <Eigen/LU> 
 #include <cmath>
 #include "beginvision.h"
-#include "filter.h"
 #include "util.h"
 
 namespace bv {

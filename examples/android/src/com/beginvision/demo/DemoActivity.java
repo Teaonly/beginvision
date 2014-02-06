@@ -19,6 +19,9 @@ public class DemoActivity extends Activity
         Button btn = null;
         btn = (Button)findViewById(R.id.btn_vibe);
         btn.setOnClickListener(vibeAction);
+
+        //Load jni libraries
+        System.loadLibrary("beginvision");
     }
 
     private OnClickListener vibeAction = new OnClickListener() {

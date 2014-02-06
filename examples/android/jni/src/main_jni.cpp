@@ -1,6 +1,8 @@
 #include <string>
 #include <jni.h>
 
+#include "vibe.h"
+
 #undef JNIEXPORT
 #define JNIEXPORT __attribute__((visibility("default")))
 #define JOW(rettype, name) extern "C" rettype JNIEXPORT JNICALL \
@@ -37,13 +39,13 @@ static jint get_native_fd(JNIEnv* env, jobject fdesc) {
 //  Global functions called from Java side 
 //
 JOW(int, updatePicture)(JNIEnv* env, jclass, jbyteArray yuvData, jint wid, jint hei) {
-    
     jbyte* cameraFrame= env->GetByteArrayElements(yuvData, NULL);
     //CameraCapture::myCapture->updatePicture((unsigned char *)cameraFrame);
     env->ReleaseByteArrayElements(yuvData, cameraFrame, JNI_ABORT);
-
     return 0;
 }
+
+
 
 //
 //  Top level library load/unload 

@@ -57,7 +57,8 @@ public class VibeActivity extends Activity
         // init audio and camera
         initAudio();
         initCamera();
-    }
+
+   }
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -129,7 +130,7 @@ public class VibeActivity extends Activity
     private PreviewCallback previewCb = new PreviewCallback() {
         public void onPreviewFrame(byte[] frame, Camera c) {
             previewLock.lock(); 
-            //nativeAgent.updatePicture(frame, cameraView.Width(), cameraView.Height(), is420);
+            NativeAgent.updatePicture(frame, cameraView.Width(), cameraView.Height());
             c.addCallbackBuffer(frame);
             previewLock.unlock();
         }

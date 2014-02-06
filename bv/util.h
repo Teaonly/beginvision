@@ -2,6 +2,8 @@
 #define _BV_UTIL_H_
 
 #include "beginvision.h"
+#include "image.h"
+#include "image_convert.h"
 #include <Eigen/Core>
 
 namespace bv {
