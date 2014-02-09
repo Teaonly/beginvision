@@ -45,7 +45,7 @@ public:
             for (int x = 0; x < wid; x++) {
                 int bg = checkPixel(x, y, in.data(x,y));
                 //updatePixel(x, y, in.data(x,y), bg);
-                out.data(x,y) = bg;
+                out.data(x,y) = 1 - bg;
                 count += bg;
             }
         } 

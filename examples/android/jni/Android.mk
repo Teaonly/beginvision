@@ -17,7 +17,7 @@ LOCAL_SHARED_LIBRARIES := libcutils\
                           libgnustl\
                           libdl 
 
-LOCAL_LDLIBS := -llog
+LOCAL_LDLIBS := -llog -ljnigraphics
 
 include $(BUILD_SHARED_LIBRARY)
 

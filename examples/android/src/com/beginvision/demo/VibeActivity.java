@@ -34,8 +34,9 @@ public class VibeActivity extends Activity
     private ReentrantLock previewLock = new ReentrantLock();
     private CameraView cameraView = null;
     private OverlayView overlayView = null;
-    private byte[]  resultFrame = null;
     private Bitmap  resultBitmap = null;    
+
+    boolean beginDemo = false;
 
     //
     //  Activiity's event handler
@@ -89,8 +90,7 @@ public class VibeActivity extends Activity
     public void onCameraReady() {
         cameraView.StopPreview();
         cameraView.setupCamera(640, 480, 4, previewCb);
-        resultFrame = new byte[cameraView.Width() * cameraView.Height()]; 
-        resultBitmap = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888);
+        resultBitmap = Bitmap.createBitmap(cameraView.Width(), cameraView.Height(), Bitmap.Config.ARGB_8888);
         cameraView.StartPreview();
     }
 
@@ -121,17 +121,21 @@ public class VibeActivity extends Activity
     };
 
     private void processNewFrame(final byte[] yuvFrame, final Camera c) {
+        if ( beginDemo == false) {
+            c.addCallbackBuffer(yuvFrame);
+            return;    
+        }
+
         if ( previewLock.isLocked() ) {
             c.addCallbackBuffer(yuvFrame);
         }
         
+        previewLock.lock(); 
         new Thread(new Runnable() {
                     public void run() {
-                        previewLock.lock(); 
-                        NativeAgent.updatePictureForResult("VIBE", yuvFrame, resultFrame, cameraView.Width(), cameraView.Height());
+                        NativeAgent.updatePictureForResult("VIBE", yuvFrame, resultBitmap, cameraView.Width(), cameraView.Height());
                         c.addCallbackBuffer(yuvFrame);
                         new Handler(Looper.getMainLooper()).post( resultAction );
-                        previewLock.unlock();
                     }
                 }).start();
     }
@@ -139,15 +143,25 @@ public class VibeActivity extends Activity
     private OnClickListener controlAction = new OnClickListener() {
         @Override
         public void onClick(View v) {
-                
+            new Handler(Looper.getMainLooper()).postDelayed( beginAction, 2000); 
         }   
     };
     
-    private Runnable resultAction = new Runnable() {
-        @Override 
+    private Runnable beginAction = new Runnable() {
         public void run() {
-            //overlayView.DrawResult(resultBitmap);
+            beginDemo = true;
         }
     };
 
+    private Runnable resultAction = new Runnable() {
+        private int count = 0;
+        @Override 
+        public void run() {
+            count++;
+            if ( (count % 3) == 0) {
+                overlayView.DrawResult(resultBitmap);
+            }
+            previewLock.unlock(); 
+        }
+    };
 }

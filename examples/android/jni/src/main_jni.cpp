@@ -48,18 +48,14 @@ JOW(int, init)(JNIEnv* env, jclass, jstring target) {
     return 0;
 }
 
-JOW(int, updatePictureForResult)(JNIEnv* env, jclass, jstring target, jbyteArray yuvData, jbyteArray resultData, jint wid, jint hei) {
+JOW(int, updatePictureForResult)(JNIEnv* env, jclass, jstring target, jbyteArray yuvData, jobject result, jint wid, jint hei) {
     std::string objTarget = convert_jstring(env, target);
 
     jbyte* cameraFrame = env->GetByteArrayElements(yuvData, NULL);
-    jbyte* resultFrame = env->GetByteArrayElements(resultData, NULL);
-
     if ( objTarget == "VIBE") {
-        VibeUpdateForResult((unsigned char*)cameraFrame, (unsigned char*)resultFrame, wid, hei);
+        VibeUpdateForResult(env, (unsigned char*)cameraFrame, result, wid, hei);
     }
-    
     env->ReleaseByteArrayElements(yuvData, cameraFrame, JNI_ABORT);
-    env->ReleaseByteArrayElements(resultData, resultFrame, 0);
     return 0;
 }
 
