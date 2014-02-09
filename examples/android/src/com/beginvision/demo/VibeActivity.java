@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.PictureCallback;
+import android.graphics.Bitmap;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
 import android.media.AudioRecord;
@@ -26,14 +27,15 @@ import android.widget.Button;
 import android.widget.TextView;
 
 public class VibeActivity extends Activity
-        implements CameraView.CameraReadyCallback
+        implements CameraView.CameraReadyCallback, OverlayView.UpdateDoneCallback
 {
     public static String TAG="BV";
     
     private ReentrantLock previewLock = new ReentrantLock();
     private CameraView cameraView = null;
     private OverlayView overlayView = null;
-    private AudioRecord audioCapture = null;
+    private byte[]  resultFrame = null;
+    private Bitmap  resultBitmap = null;    
 
     //
     //  Activiity's event handler
@@ -54,10 +56,8 @@ public class VibeActivity extends Activity
         Button btn = (Button)findViewById(R.id.btn_control);
         btn.setOnClickListener(controlAction);
 
-        // init audio and camera
-        initAudio();
+        // init camera
         initCamera();
-
    }
     @Override
     public void onDestroy() {
@@ -89,9 +89,14 @@ public class VibeActivity extends Activity
     public void onCameraReady() {
         cameraView.StopPreview();
         cameraView.setupCamera(640, 480, 4, previewCb);
+        resultFrame = new byte[cameraView.Width() * cameraView.Height()]; 
+        resultBitmap = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888);
         cameraView.StartPreview();
     }
 
+    public void onUpdateDone() {
+                
+    }
 
     //
     //  Internal help functions
@@ -103,38 +108,33 @@ public class VibeActivity extends Activity
 
         overlayView = (OverlayView)findViewById(R.id.surface_overlay);
         //overlayView_.setOnTouchListener(this);
-        //overlayView_.setUpdateDoneCallback(this);
+        overlayView.setUpdateDoneCallback(this);
     }
-    private void initAudio() {
-        int minBufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        int minTargetSize = 1600 * 2;      // 0.2 seconds buffer size
-        if (minTargetSize < minBufferSize) {
-            minTargetSize = minBufferSize;
-        }
-        if (audioCapture == null) {
-            audioCapture = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                    16000,
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT,
-                    minTargetSize);
-        }
-        
-        audioCapture.startRecording();
-        AudioProcessor audioProcessor = new AudioProcessor();
-        audioProcessor.start();  
-    }   
      
     //
     //  Internal help class and object definment
     //
     private PreviewCallback previewCb = new PreviewCallback() {
-        public void onPreviewFrame(byte[] frame, Camera c) {
-            previewLock.lock(); 
-            NativeAgent.updatePicture("VIBE", frame, cameraView.Width(), cameraView.Height());
-            c.addCallbackBuffer(frame);
-            previewLock.unlock();
+        public void onPreviewFrame(byte[] yuvFrame, Camera c) {
+            processNewFrame(yuvFrame, c);
         }
     };
+
+    private void processNewFrame(final byte[] yuvFrame, final Camera c) {
+        if ( previewLock.isLocked() ) {
+            c.addCallbackBuffer(yuvFrame);
+        }
+        
+        new Thread(new Runnable() {
+                    public void run() {
+                        previewLock.lock(); 
+                        NativeAgent.updatePictureForResult("VIBE", yuvFrame, resultFrame, cameraView.Width(), cameraView.Height());
+                        c.addCallbackBuffer(yuvFrame);
+                        new Handler(Looper.getMainLooper()).post( resultAction );
+                        previewLock.unlock();
+                    }
+                }).start();
+    }
 
     private OnClickListener controlAction = new OnClickListener() {
         @Override
@@ -142,23 +142,12 @@ public class VibeActivity extends Activity
                 
         }   
     };
-
-    private class AudioProcessor extends Thread {
-        byte[] audioPackage = new byte[1024*16];
-        int packageSize = 320*6;  // 60ms
-
-        @Override
-        public void run() {
-            while(true) {
-                int ret = audioCapture.read(audioPackage, 0, packageSize);
-                if ( ret == AudioRecord.ERROR_INVALID_OPERATION ||
-                     ret == AudioRecord.ERROR_BAD_VALUE) {
-                    break; 
-                }
-                
-                //nativeAgent.updatePCM(audioPackage, ret);  
-            }
-        }   
-    }
     
+    private Runnable resultAction = new Runnable() {
+        @Override 
+        public void run() {
+            //overlayView.DrawResult(resultBitmap);
+        }
+    };
+
 }

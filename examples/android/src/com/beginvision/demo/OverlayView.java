@@ -23,7 +23,6 @@ public class OverlayView extends View {
     private Bitmap targetBMP = null;
     private Rect targetRect = null;
     
-
     public OverlayView(Context c, AttributeSet attr) {
         super(c, attr); 
     }
@@ -42,7 +41,7 @@ public class OverlayView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         if ( targetBMP != null ) {            
-            
+                        
             canvas.drawBitmap(targetBMP, null, targetRect, null);
                         
             if ( updateDoneCb != null)

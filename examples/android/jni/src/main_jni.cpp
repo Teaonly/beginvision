@@ -38,6 +38,31 @@ static jint get_native_fd(JNIEnv* env, jobject fdesc) {
 //
 //  Global functions called from Java side 
 //
+JOW(int, init)(JNIEnv* env, jclass, jstring target) {
+    std::string objTarget = convert_jstring(env, target);
+    
+    if ( objTarget == "VIBE" ) {
+        VibeInit();        
+    }
+    
+    return 0;
+}
+
+JOW(int, updatePictureForResult)(JNIEnv* env, jclass, jstring target, jbyteArray yuvData, jbyteArray resultData, jint wid, jint hei) {
+    std::string objTarget = convert_jstring(env, target);
+
+    jbyte* cameraFrame = env->GetByteArrayElements(yuvData, NULL);
+    jbyte* resultFrame = env->GetByteArrayElements(resultData, NULL);
+
+    if ( objTarget == "VIBE") {
+        VibeUpdateForResult((unsigned char*)cameraFrame, (unsigned char*)resultFrame, wid, hei);
+    }
+    
+    env->ReleaseByteArrayElements(yuvData, cameraFrame, JNI_ABORT);
+    env->ReleaseByteArrayElements(resultData, resultFrame, 0);
+    return 0;
+}
+
 JOW(int, updatePicture)(JNIEnv* env, jclass, jstring target, jbyteArray yuvData, jint wid, jint hei) {
     std::string objTarget = convert_jstring(env, target);
 
@@ -46,7 +71,6 @@ JOW(int, updatePicture)(JNIEnv* env, jclass, jstring target, jbyteArray yuvData,
     env->ReleaseByteArrayElements(yuvData, cameraFrame, JNI_ABORT);
     return 0;
 }
-
 
 
 //
