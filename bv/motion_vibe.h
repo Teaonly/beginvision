@@ -44,7 +44,7 @@ public:
         for (int y = 0; y < hei; y++) {
             for (int x = 0; x < wid; x++) {
                 int bg = checkPixel(x, y, in.data(x,y));
-                //updatePixel(x, y, in.data(x,y), bg);
+                updateModle(x, y, in.data(x,y), bg);
                 out.data(x,y) = 1 - bg;
                 count += bg;
             }
@@ -98,6 +98,13 @@ private:
             }
         }
         return count >= minSelected_;
+    }
+    
+    void updateModle(int x, int y, int newData, int bg) {
+        if (bg == 0) {
+            return;
+        }
+        
     }
 
 protected:
