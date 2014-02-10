@@ -55,7 +55,7 @@ JOW(int, updatePictureForResult)(JNIEnv* env, jclass, jstring target, jbyteArray
     if ( objTarget == "VIBE") {
         VibeUpdateForResult(env, (unsigned char*)cameraFrame, result, wid, hei);
     }
-    env->ReleaseByteArrayElements(yuvData, cameraFrame, JNI_ABORT);
+    env->ReleaseByteArrayElements(yuvData, cameraFrame, 0);
     return 0;
 }
 
@@ -64,7 +64,7 @@ JOW(int, updatePicture)(JNIEnv* env, jclass, jstring target, jbyteArray yuvData,
 
     jbyte* cameraFrame= env->GetByteArrayElements(yuvData, NULL);
     
-    env->ReleaseByteArrayElements(yuvData, cameraFrame, JNI_ABORT);
+    env->ReleaseByteArrayElements(yuvData, cameraFrame, 0);
     return 0;
 }
 

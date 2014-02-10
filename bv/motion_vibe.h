@@ -15,7 +15,7 @@ public:
     MD_ViBE(int wid, int hei):
         isInited_(false),
         sampleNumber_(20),       
-        grayDistance_(20),
+        grayDistance_(12),
         minSelected_(2),
         randomSub_(16) {
         Eigen::MatrixXi* onePicture;
@@ -104,7 +104,15 @@ private:
         if (bg == 0) {
             return;
         }
-        
+        if ( random() % randomSub_ == 0) {
+            int r = random() % sampleNumber_;
+            (*bgModle_[r])(x,y) = newData;
+        }
+        if ( random() % randomSub_ == 0) {
+            getRandomNeighbr(x, y);
+            int r = random() % sampleNumber_;
+            (*bgModle_[r])(x,y) = newData;
+        }
     }
 
 protected:

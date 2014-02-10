@@ -95,7 +95,7 @@ public class VibeActivity extends Activity
     }
 
     public void onUpdateDone() {
-                
+        previewLock.unlock(); 
     }
 
     //
@@ -160,8 +160,9 @@ public class VibeActivity extends Activity
             count++;
             if ( (count % 3) == 0) {
                 overlayView.DrawResult(resultBitmap);
+            } else {
+                previewLock.unlock(); 
             }
-            previewLock.unlock(); 
         }
     };
 }
