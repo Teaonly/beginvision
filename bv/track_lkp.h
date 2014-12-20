@@ -47,7 +47,7 @@ public:
             double x,y;
             _LucasKanade(sourceX[i], sourceY[i], x, y);
             destX[i] = x;
-            destY[i] = y;            
+            destY[i] = y;
         }
         
         return BV_OK;
@@ -72,7 +72,7 @@ private:
                 }
             }
             
-            imgPyr.push_back(d1);
+            imgPyr[i] = d1;
         }
     }
 

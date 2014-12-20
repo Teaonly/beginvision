@@ -1,5 +1,5 @@
-#ifndef _BV_TRACK_MEANSHIFT_H_
-#define _BV_TRACK_MEANSHIFT_H_ 
+#ifndef _BV_TRACK_KCF_H_
+#define _BV_TRACK_KCF_H_ 
 
 #include <vector>
 #include <Eigen/Core>
@@ -10,7 +10,6 @@
 #include "util.h"
 
 namespace bv {
-
 
 
 }

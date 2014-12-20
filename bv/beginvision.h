@@ -4,7 +4,7 @@
 #include <string>
 
 namespace bv {
-    std::string BV_VERSION = "0.1";
+    const std::string BV_VERSION = "0.1";
     
     const double PI = 3.1416;
         

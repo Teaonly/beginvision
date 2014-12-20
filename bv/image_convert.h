@@ -107,6 +107,46 @@ public:
         return BV_OK;
     }
 
+    static int resizeImage(Eigen::MatrixXf& in, Eigen::MatrixXf& out, double smallShift = 0.0, INTERPOLATE_MODE mode=INTERPOLATE_BILINEAR) {
+        if ( mode != INTERPOLATE_BILINEAR) {
+            return BV_ERROR_PARAMETER;
+        }
+        
+        double scaleX = 1.0 * in.rows() / out.rows();
+        double scaleY = 1.0 * in.cols() / out.cols();
+        
+        for (int y = 0; y < out.cols(); y++) {
+            for ( int x = 0; x < out.rows(); x++) {
+                
+                double xx = scaleX * x * 1.0 + smallShift;
+                double yy = scaleY * y * 1.0 + smallShift;
+ 
+                int leftX = (int) (xx);
+                int rightX = (int) (xx + 1);
+                int topY = (int) (yy);
+                int bottomY = (int) (yy + 1);
+
+                if ( rightX >= in.rows() ) {
+                    rightX = in.rows() - 1;
+                    xx = rightX;
+                    leftX = rightX - 1;
+                } 
+                if ( bottomY >= in.cols() ) {
+                    bottomY = in.cols() - 1;
+                    yy = bottomY;
+                    topY = bottomY - 1;
+                }
+                
+                double top = (xx - leftX) * in(rightX, topY) + (rightX - xx) * in(leftX, topY);
+                double bottom = (xx - leftX) * in(rightX, bottomY) + (rightX - xx) * in(leftX, bottomY);
+                
+                out(x,y) = (yy - topY) * bottom + (bottomY - yy) * top;
+            }
+        } 
+
+        return BV_OK;
+    }
+
 private:
     template<typename T>
     static void rgbToGray(unsigned char r, unsigned char g, unsigned char b, T& output) {
