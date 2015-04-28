@@ -12,9 +12,21 @@ public:
         float tv = 0.0;
         hist_.resize(img.scale + 1, tv);
 
-        for(int y = 0; y < img.width(); y++) {
-            for (int x = 0; x < img.height(); x++) {
-                unsigned int charValue = img.data(y,x) % (img.scale+1);
+        for(int x = 0; x < img.width(); x++) {
+            for (int y = 0; y < img.height(); y++) {
+                unsigned int charValue = img.data(x,y) % (img.scale+1);
+                hist_[charValue] = hist_[charValue] + 1;
+            }
+        }
+    }
+    
+    Histogram(Eigen::MatrixXd& mat, double scale, unsigned int bin) {
+        float tv = 0.0;
+        hist_.resize(bin, tv);
+        
+        for(int x = 0; x < mat.rows(); x++) {
+            for(int y = 0; y < mat.cols(); y++) {
+                unsigned int charValue = (int)(mat(x,y)/scale * bin) % bin;
                 hist_[charValue] = hist_[charValue] + 1;
             }
         }
@@ -68,12 +80,12 @@ public:
         }
     }
 
-    unsigned char autoThreshold() {
+    unsigned int autoThreshold() {
         normalization();
 
         // get the expection 
         float e = 0.0;
-        for(int i = 0; i < 256; i++) {
+        for(int i = 0; i < hist_.size(); i++) {
             e = e + i * hist_[i];
         }
 

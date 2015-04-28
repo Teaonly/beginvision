@@ -26,8 +26,12 @@ public:
         return (unsigned int)hist_.size();
     }
     
-    float value(unsigned int v) const {
+    double value(unsigned int v) const {
         return hist_[v];
+    }
+    
+    std::vector<double> getHitogram() {
+        return hist_;
     }
     
     float distWith(DS_Hog& that) {
@@ -43,11 +47,7 @@ public:
         return (float)dist;
     }
     
-    int extrac(Eigen::MatrixXd& img) {
-        for(int i = 0; i < _num_bin; i++) {
-            hist_[i] = 0.0;
-        }
-        
+    void prepareImage(Eigen::MatrixXd& img) {
         // sobel operator
         Eigen::MatrixXd h(3,3);
         h(0,0) = -1;
@@ -62,31 +62,48 @@ public:
         h(1,2) = 0;
         h(2,2) = 1;
         Eigen::MatrixXd ht = h.transpose();
-
-        Eigen::MatrixXd imgXd(img.rows(), img.cols());
-        Eigen::MatrixXd imgYd(img.rows(), img.cols());
-        Filter::withTemplate(img, imgXd, h);
-        Filter::withTemplate(img, imgYd, ht);
-
-        for (int x = 1; x < img.rows() - 1; x++) {
-            for ( int y = 1; y < img.cols() - 1; y++) {
-                double mag = sqrt(pow(imgXd(x,y), 2) + pow(imgYd(x,y), 2));
-                double orient = atan2(imgYd(x,y), imgXd(x,y) );
+        
+        imgXd_.resize(img.rows(), img.cols());
+        imgYd_.resize(img.rows(), img.cols());
+        Filter::withTemplate(img, imgXd_, h);
+        Filter::withTemplate(img, imgYd_, ht);
+    }
+    
+    int extrac(int bx, int by, int wid, int hei, bool normlized = true) {
+        if ( imgXd_.rows() == 0 || imgXd_.cols() == 0) {
+            return BV_ERROR;
+        }
+        
+        for(int i = 0; i < _num_bin; i++) {
+            hist_[i] = 0.0;
+        }
+        
+        for (int x = bx+1; x < bx+wid - 1; x++) {
+            for ( int y = by+1; y < by+hei - 1; y++) {
+                double mag = sqrt(pow(imgXd_(x,y), 2) + pow(imgYd_(x,y), 2));
+                double orient = atan2(imgYd_(x,y), imgXd_(x,y) );
                 unsigned int bin = _binFor(orient);
                 hist_[bin] += mag;
             }
         }
-
-        // L1 normlize
-        double sum = 0.00000001;
-        for(unsigned int i = 0; i < _num_bin; i++) {
-            sum += hist_[i];
-        }
-        for(unsigned int i = 0; i < _num_bin; i++) {
-            hist_[i] /= sum;
+        
+        if ( normlized == true) {
+            // L1 normlize
+            double sum = 0.00000001;
+            for(unsigned int i = 0; i < _num_bin; i++) {
+                sum += hist_[i];
+            }
+            for(unsigned int i = 0; i < _num_bin; i++) {
+                hist_[i] /= sum;
+            }
         }
 
         return BV_OK;
+    }
+    
+    int extrac(Eigen::MatrixXd& img, bool normlized = true) {
+        prepareImage(img);
+        return extrac(0, 0, (int)img.rows(), (int)img.cols(), normlized);
     }
 
 private:
@@ -99,6 +116,8 @@ private:
 private:
     unsigned int _num_bin;
     std::vector<double> hist_;
+    Eigen::MatrixXd imgXd_;
+    Eigen::MatrixXd imgYd_;
 
 };
 
